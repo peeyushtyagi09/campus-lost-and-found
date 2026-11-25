@@ -1,0 +1,48 @@
+# Secrets
+.env
+.env.local
+.env.*.local
+*.pfx
+*.pem
+secrets.json
+
+# .NET
+bin/
+obj/
+TestResults/
+coverage/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.tsbuildinfo
+.vite/
+coverage/
+
+# Uploads and local data
+uploads/
+**/uploads/**
+!**/uploads/.gitkeep
+
+# Logs
+logs/
+*.log
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Docker
+**/.docker/
+
+# Test containers
+.mongo2go/

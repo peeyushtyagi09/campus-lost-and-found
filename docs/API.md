@@ -1,0 +1,60 @@
+# API
+
+Base path for feature routes: `/api/v1`. JSON only. Errors use [RFC 7807](https://datatracker.ietf.org/doc/html/rfc7807) ProblemDetails and never include a stack trace.
+
+Health routes are at the root, not under `/api/v1`.
+
+## Implemented in Phase 0
+
+| Method | Route | Auth | Description |
+| --- | --- | --- | --- |
+| GET | `/health/live` | none | Liveness. Does not check MongoDB. |
+| GET | `/health/ready` | none | Readiness. Checks MongoDB. |
+
+Both return JSON:
+
+```json
+{ "status": "Healthy", "checks": [{ "name": "self", "status": "Healthy" }] }
+```
+
+`/health/ready` returns 503 when MongoDB is unreachable. The status string is `Healthy` or `Unhealthy`.
+
+Unhandled exceptions return `application/problem+json` with status 500, a generic title, and no exception message or stack trace.
+
+## Contract for M1 (not implemented yet)
+
+| Method | Route | Auth | Description |
+| --- | --- | --- | --- |
+| POST | `/api/v1/auth/register` | none | `{ displayName, email, password }` → 201 `{ user }` |
+| POST | `/api/v1/auth/login` | none | `{ email, password }` → 200 `{ accessToken, expiresAt, user }` |
+| GET | `/api/v1/auth/me` | JWT | Current user |
+| POST | `/api/v1/lost-reports` | JWT | Create a lost report |
+| GET | `/api/v1/lost-reports/mine` | JWT | Owner's reports, including private fields |
+| GET | `/api/v1/lost-reports/{id}` | JWT | Owner or Staff see the full report. Everyone else gets 404 |
+| PUT | `/api/v1/lost-reports/{id}` | JWT owner | Update |
+| DELETE | `/api/v1/lost-reports/{id}` | JWT owner or Staff | Soft close |
+| POST | `/api/v1/uploads/photos` | JWT | Multipart file → `{ fileName, url }` |
+| GET | `/api/v1/media/{fileName}` | none | Sanitized photo. `Cache-Control` and `X-Content-Type-Options: nosniff` |
+| GET | `/api/v1/public/board` | none | `PublicReportDto` only. Open or Matched. `pageSize` max 50 |
+
+The route table in the master prompt lists `/uploads/photos`, `/media/{fileName}`, and `/public/board` without the `/api/v1` prefix. This draft keeps feature routes under `/api/v1` and documents that choice in `docs/DECISIONS.md`. Media stays easy to proxy: nginx forwards `/api/` and `/media/`. The media path will be confirmed when uploads are built in Phase 2. If the implemented media route must be exactly `/media/{fileName}`, nginx already proxies that prefix.
+
+Password policy: at least 10 characters with an uppercase letter, a lowercase letter, and a digit. Duplicate registration returns 409 with a message that does not reveal whether the email exists.
+
+## Headers
+
+Every response sets:
+
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `Referrer-Policy: no-referrer`
+- `Content-Security-Policy: default-src 'none'`
+- `Strict-Transport-Security` when the request is HTTPS and the environment is Production
+
+## Limits
+
+- Rate limiter: strict policy `auth` for `/api/v1/auth/*`, moderate policy `uploads` for photo uploads, plus a global fixed window.
+- Request body limit: `Storage:MaxPhotoBytes` (default 5 MB).
+- Allowed photo types, once uploads exist: JPEG, PNG, WebP.
+- CORS allow-list from `Cors:AllowedOrigins`.
+- Responses are compressed.

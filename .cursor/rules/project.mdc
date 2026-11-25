@@ -1,0 +1,45 @@
+---
+description: Global rules for the Campus Lost & Found Platform
+alwaysApply: true
+---
+
+# Global Rules
+
+These rules apply to every phase. They are the project contract from Section 3 of the master prompt.
+
+## Process
+
+- Work one phase at a time. At the end of each phase: build, run all tests, run linters, then print a short report (files created, commands run, test results, anything deferred). Stop and wait.
+- Before writing code in a phase, list the files you will create or change.
+- One feature = one Git branch (`feature/<name>`), conventional commits (`feat:`, `fix:`, `test:`, `docs:`, `chore:`). Initialize git in Phase 0 and commit at the end of each phase.
+- Never commit secrets. `.env` is git-ignored; commit `.env.example`.
+- If something in this spec is ambiguous, choose the most secure, simplest option and note it in `docs/DECISIONS.md`. Do not ask unless blocked.
+
+## Backend rules
+
+- Layering: Controllers → Services → Repositories → MongoDB. Controllers contain no business logic and never touch the database.
+- Never return a Mongo entity from a controller. Always return a DTO. Entities and DTOs live in separate namespaces.
+- Use async/await everywhere, `CancellationToken` on all I/O methods, nullable reference types enabled, `TreatWarningsAsErrors=true`.
+- Errors: custom exception-handling middleware returns RFC 7807 ProblemDetails. Never leak stack traces or internal messages in production.
+- All input validated with FluentValidation. Reject unknown/oversized payloads.
+- Config via `appsettings.json` + environment variables + Options pattern (`IOptions<T>` with validation on start). No magic strings.
+- Dependency injection for everything; no static state.
+
+## Privacy rules
+
+- Every field in every entity is classified Public or Private in `docs/DATA_MODEL.md` and in code via a custom attribute `[FieldVisibility(Visibility.Public|Private)]`.
+- Public endpoints may only return DTOs built from Public fields. Create `PublicReportDto` explicitly (allow-list mapping, never "map everything then remove").
+- Private fields (contact phone/email, identifying details, exact location notes, owner-proof answers) are encrypted at rest with AES-256-GCM using a key from configuration (`Encryption:Key`, base64, 32 bytes), with a random 12-byte nonce per value, stored as `base64(nonce|ciphertext|tag)`.
+- Uploaded photos: decode → strip ALL metadata (EXIF, IPTC, XMP, ICC where not needed) → re-encode (JPEG/PNG/WebP) → store under a random GUID filename. Never keep or serve the original. Never trust the client filename or content-type; detect type by decoding.
+- Passwords: never logged, never returned. Lockout/rate limit on login.
+- Logs must never contain private fields, tokens, or passwords.
+- Automated privacy tests must exist and run in CI; a failing privacy test blocks the build.
+
+## Frontend rules
+
+- TypeScript `strict: true`, no `any`. ESLint + Prettier configured.
+- One API layer (`src/api/`) wrapping fetch/axios; components never call fetch directly.
+- Render only fields present in the public DTO types. Types for public and private shapes are separate.
+- All forms validated before submit (Zod). Show inline error messages next to the field.
+- Accessible: semantic HTML, labels, keyboard navigation, ARIA where needed, visible focus.
+- JWT stored in memory + sessionStorage fallback is acceptable; never log it. Auto-logout on 401.

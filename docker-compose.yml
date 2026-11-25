@@ -1,0 +1,59 @@
+name: campus-lost-and-found
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+
+  api:
+    build:
+      context: ./server
+      dockerfile: src/LostAndFound.Api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Mongo__ConnectionString: ${MONGO_CONNECTION_STRING}
+      Mongo__DatabaseName: ${MONGO_DATABASE_NAME}
+      Jwt__Issuer: ${JWT_ISSUER}
+      Jwt__Audience: ${JWT_AUDIENCE}
+      Jwt__SigningKey: ${JWT_SIGNING_KEY}
+      Jwt__ExpiryMinutes: ${JWT_EXPIRY_MINUTES}
+      Encryption__Key: ${ENCRYPTION_KEY}
+      Storage__UploadPath: ${STORAGE_UPLOAD_PATH}
+      Storage__MaxPhotoBytes: ${STORAGE_MAX_PHOTO_BYTES}
+      Cors__AllowedOrigins__0: ${CORS_ALLOWED_ORIGIN}
+      RateLimiting__AuthPermitLimit: ${RATE_LIMIT_AUTH_PERMIT}
+      RateLimiting__UploadPermitLimit: ${RATE_LIMIT_UPLOAD_PERMIT}
+      RateLimiting__GlobalPermitLimit: ${RATE_LIMIT_GLOBAL_PERMIT}
+      RateLimiting__WindowSeconds: ${RATE_LIMIT_WINDOW_SECONDS}
+    ports:
+      - "${API_PORT:-8080}:8080"
+    volumes:
+      - uploads_data:/app/uploads
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-}
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "${CLIENT_PORT:-8088}:80"
+
+volumes:
+  mongo_data:
+  uploads_data:
