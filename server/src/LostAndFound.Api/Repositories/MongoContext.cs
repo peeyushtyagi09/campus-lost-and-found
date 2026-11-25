@@ -1,7 +1,6 @@
 using LostAndFound.Api.Entities;
 using LostAndFound.Api.Options;
 using Microsoft.Extensions.Options;
-using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace LostAndFound.Api.Repositories;
@@ -21,7 +20,7 @@ public sealed class MongoContext
 
     public IMongoCollection<User> Users => _database.GetCollection<User>(UsersCollection);
 
-    public IMongoCollection<BsonDocument> LostReports => _database.GetCollection<BsonDocument>(LostReportsCollection);
+    public IMongoCollection<LostReport> LostReports => _database.GetCollection<LostReport>(LostReportsCollection);
 }
 
 internal sealed class MongoIndexHostedService : IHostedService
@@ -46,19 +45,21 @@ internal sealed class MongoIndexHostedService : IHostedService
 
         var lostReportIndexes = new[]
         {
-            new CreateIndexModel<BsonDocument>(
-                Builders<BsonDocument>.IndexKeys
-                    .Ascending("Status")
-                    .Ascending("Category")
-                    .Descending("CreatedAt"),
+            new CreateIndexModel<LostReport>(
+                Builders<LostReport>.IndexKeys
+                    .Ascending(report => report.Status)
+                    .Ascending(report => report.Category)
+                    .Descending(report => report.CreatedAt),
                 new CreateIndexOptions { Name = "ix_lost_status_category_created" }),
-            new CreateIndexModel<BsonDocument>(
-                Builders<BsonDocument>.IndexKeys
-                    .Ascending("ReporterId")
-                    .Descending("CreatedAt"),
+            new CreateIndexModel<LostReport>(
+                Builders<LostReport>.IndexKeys
+                    .Ascending(report => report.ReporterId)
+                    .Descending(report => report.CreatedAt),
                 new CreateIndexOptions { Name = "ix_lost_reporter_created" }),
-            new CreateIndexModel<BsonDocument>(
-                Builders<BsonDocument>.IndexKeys.Text("Title").Text("PublicDescription"),
+            new CreateIndexModel<LostReport>(
+                Builders<LostReport>.IndexKeys
+                    .Text(report => report.Title)
+                    .Text(report => report.PublicDescription),
                 new CreateIndexOptions { Name = "tx_lost_title_description" })
         };
 

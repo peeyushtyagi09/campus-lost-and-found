@@ -37,7 +37,7 @@ Index: unique `{ EmailHash: 1 }`.
 | PrivateDetails | string | Private | Encrypted. Serial numbers, unique marks, exact location |
 | ContactPhone | string | Private | Encrypted |
 | ContactEmail | string | Private | Encrypted |
-| CreatedAt | UTC date | Private | May be shown publicly as "posted on" |
+| CreatedAt | UTC date | Public | Shown publicly as `PostedAt` on `PublicReportDto` |
 | UpdatedAt | UTC date | Private | |
 
 Indexes:

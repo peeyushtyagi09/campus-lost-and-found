@@ -23,6 +23,38 @@ public sealed class ExceptionHandlingMiddleware
         {
             throw;
         }
+        catch (BadHttpRequestException badRequest)
+        {
+            var statusCode = badRequest.StatusCode is StatusCodes.Status413PayloadTooLarge
+                ? StatusCodes.Status413PayloadTooLarge
+                : StatusCodes.Status400BadRequest;
+            var title = statusCode == StatusCodes.Status413PayloadTooLarge
+                ? "Request payload exceeds maximum allowed size."
+                : "Malformed request payload.";
+
+            _logger.LogWarning("Rejected malformed or oversized request {Method} {Path} with {StatusCode}.",
+                context.Request.Method,
+                context.Request.Path.Value,
+                statusCode);
+
+            await WriteProblemAsync(context, statusCode, title);
+        }
+        catch (InvalidDataException invalidData)
+        {
+            var statusCode = invalidData.Message.Contains("length limit", StringComparison.OrdinalIgnoreCase)
+                ? StatusCodes.Status413PayloadTooLarge
+                : StatusCodes.Status400BadRequest;
+            var title = statusCode == StatusCodes.Status413PayloadTooLarge
+                ? "Request payload exceeds maximum allowed size."
+                : "Malformed request payload.";
+
+            _logger.LogWarning("Rejected invalid request data {Method} {Path} with {StatusCode}.",
+                context.Request.Method,
+                context.Request.Path.Value,
+                statusCode);
+
+            await WriteProblemAsync(context, statusCode, title);
+        }
         catch (Exception exception)
         {
             _logger.LogError(
@@ -36,21 +68,34 @@ public sealed class ExceptionHandlingMiddleware
                 throw;
             }
 
-            context.Response.Clear();
-            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-
-            var problem = new ProblemDetails
-            {
-                Status = StatusCodes.Status500InternalServerError,
-                Title = "An unexpected error occurred.",
-                Type = "https://tools.ietf.org/html/rfc7807",
-                Instance = context.Request.Path
-            };
-
-            await context.Response.WriteAsJsonAsync(
-                problem,
-                options: null,
-                contentType: "application/problem+json");
+            await WriteProblemAsync(
+                context,
+                StatusCodes.Status500InternalServerError,
+                "An unexpected error occurred.");
         }
+    }
+
+    private static Task WriteProblemAsync(HttpContext context, int statusCode, string title)
+    {
+        if (context.Response.HasStarted)
+        {
+            return Task.CompletedTask;
+        }
+
+        context.Response.Clear();
+        context.Response.StatusCode = statusCode;
+
+        var problem = new ProblemDetails
+        {
+            Status = statusCode,
+            Title = title,
+            Type = "https://tools.ietf.org/html/rfc7807",
+            Instance = context.Request.Path
+        };
+
+        return context.Response.WriteAsJsonAsync(
+            problem,
+            options: null,
+            contentType: "application/problem+json");
     }
 }

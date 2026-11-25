@@ -29,17 +29,22 @@ Unhandled exceptions return `application/problem+json` with status 500, a generi
 | POST | `/api/v1/auth/login` | none | `{ email, password }` → 200 `{ accessToken, expiresAt, user }` (423 when locked out) |
 | GET | `/api/v1/auth/me` | JWT | Current user `{ id, displayName, email, role }` |
 
-## Contract for M1 (remaining in Phases 2–3)
+## Implemented in Phase 2 (Lost Reports & Photos)
 
 | Method | Route | Auth | Description |
 | --- | --- | --- | --- |
-| POST | `/api/v1/lost-reports` | JWT | Create a lost report |
-| GET | `/api/v1/lost-reports/mine` | JWT | Owner's reports, including private fields |
-| GET | `/api/v1/lost-reports/{id}` | JWT | Owner or Staff see the full report. Everyone else gets 404 |
-| PUT | `/api/v1/lost-reports/{id}` | JWT owner | Update |
-| DELETE | `/api/v1/lost-reports/{id}` | JWT owner or Staff | Soft close |
-| POST | `/api/v1/uploads/photos` | JWT | Multipart file → `{ fileName, url }` |
-| GET | `/api/v1/media/{fileName}` | none | Sanitized photo. `Cache-Control` and `X-Content-Type-Options: nosniff` |
+| POST | `/api/v1/lost-reports` | JWT | Create a lost report (encrypts private fields; ignores body `reporterId`) |
+| GET | `/api/v1/lost-reports/mine?page=&pageSize=` | JWT | Owner's paginated reports with decrypted private fields |
+| GET | `/api/v1/lost-reports/{id}` | JWT | Owner or Staff see full report; others get `404` |
+| PUT | `/api/v1/lost-reports/{id}` | JWT owner | Update report (404 for non-owners) |
+| DELETE | `/api/v1/lost-reports/{id}` | JWT owner/Staff | Soft close (`Status = Closed`, returns `204`) |
+| POST | `/api/v1/uploads/photos` | JWT | Multipart image (`file`) → `201 { fileName, url }` (metadata stripped, re-encoded) |
+| GET | `/api/v1/media/{fileName}` | none | Serves sanitized photo by GUID filename (`Cache-Control`, `nosniff`) |
+
+## Contract for M1 (remaining in Phase 3)
+
+| Method | Route | Auth | Description |
+| --- | --- | --- | --- |
 | GET | `/api/v1/public/board` | none | `PublicReportDto` only. Open or Matched. `pageSize` max 50 |
 
 The route table in the master prompt lists `/uploads/photos`, `/media/{fileName}`, and `/public/board` without the `/api/v1` prefix. This draft keeps feature routes under `/api/v1` and documents that choice in `docs/DECISIONS.md`. Media stays easy to proxy: nginx forwards `/api/` and `/media/`. The media path will be confirmed when uploads are built in Phase 2. If the implemented media route must be exactly `/media/{fileName}`, nginx already proxies that prefix.

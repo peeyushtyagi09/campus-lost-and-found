@@ -6,7 +6,7 @@ Work stops at the end of each phase until the user says `next`.
 | --- | --- | --- | --- |
 | 0 | M0 | Solution, client shell, Docker, CI, docs, health checks, exception middleware | Done |
 | 1 | M1-A | Field visibility, AES-256-GCM, user repository, register / login / me | Done |
-| 2 | M1-B | Lost reports and sanitized photo upload | Not started |
+| 2 | M1-B | Lost reports and sanitized photo upload | Done |
 | 3 | M1-C | Public board, privacy test suite, dev seed | Not started |
 | 4 | M1 | React client for auth, reports, and the board | Not started |
 | 5 | M1 | Hardening, coverage gates, changelog, tag `v0.1.0` | Not started |

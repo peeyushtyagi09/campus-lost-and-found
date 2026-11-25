@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using FluentValidation;
 using LostAndFound.Api.Entities;
@@ -29,6 +30,9 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<FluentValidationActionFilter>();
+}).AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
@@ -122,9 +126,13 @@ builder.Services.AddHostedService<MongoIndexHostedService>();
 builder.Services.AddSingleton<IEncryptionService, AesGcmEncryptionService>();
 builder.Services.AddSingleton<IEmailHasher, HmacEmailHasher>();
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+builder.Services.AddSingleton<IPhotoSanitizer, ImageSharpPhotoSanitizer>();
+builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<IUserRepository, MongoUserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ILostReportRepository, MongoLostReportRepository>();
+builder.Services.AddScoped<ILostReportService, LostReportService>();
 
 builder.Services.AddHealthChecks()
     .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"])
