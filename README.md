@@ -51,6 +51,14 @@ For `dotnet run` on the host, point MongoDB at `mongodb://localhost:27017` and s
 dotnet test server/LostAndFound.sln
 ```
 
+## Development seed
+
+Seeds 1 admin, 1 staff, 3 users, 20 lost reports (encrypted fake private data), and 3 sanitized sample photos. Refuses to run when `ASPNETCORE_ENVIRONMENT=Production`.
+
+```bash
+dotnet run --project server/scripts/seed/LostAndFound.Seed.csproj
+```
+
 ```bash
 cd client
 npm ci

@@ -41,11 +41,11 @@ Unhandled exceptions return `application/problem+json` with status 500, a generi
 | POST | `/api/v1/uploads/photos` | JWT | Multipart image (`file`) → `201 { fileName, url }` (metadata stripped, re-encoded) |
 | GET | `/api/v1/media/{fileName}` | none | Serves sanitized photo by GUID filename (`Cache-Control`, `nosniff`) |
 
-## Contract for M1 (remaining in Phase 3)
+## Implemented in Phase 3 (Public Board)
 
 | Method | Route | Auth | Description |
 | --- | --- | --- | --- |
-| GET | `/api/v1/public/board` | none | `PublicReportDto` only. Open or Matched. `pageSize` max 50 |
+| GET | `/api/v1/public/board?category=&area=&q=&page=&pageSize=` | none | Paginated `PublicReportDto` list (`Open` / `Matched` only, newest first, max `pageSize` 50) |
 
 The route table in the master prompt lists `/uploads/photos`, `/media/{fileName}`, and `/public/board` without the `/api/v1` prefix. This draft keeps feature routes under `/api/v1` and documents that choice in `docs/DECISIONS.md`. Media stays easy to proxy: nginx forwards `/api/` and `/media/`. The media path will be confirmed when uploads are built in Phase 2. If the implemented media route must be exactly `/media/{fileName}`, nginx already proxies that prefix.
 

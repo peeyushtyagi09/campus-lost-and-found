@@ -11,6 +11,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{FC80B547
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LostAndFound.Api.Tests", "tests\LostAndFound.Api.Tests\LostAndFound.Api.Tests.csproj", "{995518BA-8855-4EC3-8864-B63775C333F0}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{94F55C40-8A2D-4BF7-92B3-B9E7D893A2C6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LostAndFound.Seed", "scripts\seed\LostAndFound.Seed.csproj", "{B85B4411-35B8-4D64-8DA3-603009055BA1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,9 +32,14 @@ Global
 		{995518BA-8855-4EC3-8864-B63775C333F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{995518BA-8855-4EC3-8864-B63775C333F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{995518BA-8855-4EC3-8864-B63775C333F0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B85B4411-35B8-4D64-8DA3-603009055BA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B85B4411-35B8-4D64-8DA3-603009055BA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B85B4411-35B8-4D64-8DA3-603009055BA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B85B4411-35B8-4D64-8DA3-603009055BA1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1668B561-C0CC-40D3-8ADE-99C40BB682E3} = {B98852FA-D641-4F9C-B16F-02E4606A5DEE}
 		{995518BA-8855-4EC3-8864-B63775C333F0} = {FC80B547-E252-4243-B8F2-311C21F18054}
+		{B85B4411-35B8-4D64-8DA3-603009055BA1} = {94F55C40-8A2D-4BF7-92B3-B9E7D893A2C6}
 	EndGlobalSection
 EndGlobal

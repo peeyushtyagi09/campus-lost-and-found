@@ -23,7 +23,7 @@ public sealed class MongoContext
     public IMongoCollection<LostReport> LostReports => _database.GetCollection<LostReport>(LostReportsCollection);
 }
 
-internal sealed class MongoIndexHostedService : IHostedService
+public sealed class MongoIndexHostedService : IHostedService
 {
     private readonly MongoContext _context;
     private readonly ILogger<MongoIndexHostedService> _logger;

@@ -133,6 +133,7 @@ builder.Services.AddScoped<IUserRepository, MongoUserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ILostReportRepository, MongoLostReportRepository>();
 builder.Services.AddScoped<ILostReportService, LostReportService>();
+builder.Services.AddScoped<IPublicBoardService, PublicBoardService>();
 
 builder.Services.AddHealthChecks()
     .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"])

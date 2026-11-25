@@ -65,8 +65,10 @@ public sealed class MongoLostReportRepository : ILostReportRepository
 
         if (!string.IsNullOrWhiteSpace(campusArea))
         {
-            var trimmedArea = campusArea.Trim();
-            filters.Add(builder.Eq(report => report.CampusArea, trimmedArea));
+            var escapedArea = System.Text.RegularExpressions.Regex.Escape(campusArea.Trim());
+            filters.Add(builder.Regex(
+                report => report.CampusArea,
+                new BsonRegularExpression($"^{escapedArea}$", "i")));
         }
 
         if (!string.IsNullOrWhiteSpace(query))
