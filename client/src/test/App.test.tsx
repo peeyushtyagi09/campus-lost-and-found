@@ -1,31 +1,24 @@
-import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import { App } from '../App';
+import { screen } from '@testing-library/react';
+import { renderAppAt } from './testUtils';
 
-describe('App shell', () => {
-  it('renders home route with accessible heading and skip link', () => {
-    render(
-      <MemoryRouter
-        initialEntries={['/']}
-        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-      >
-        <App />
-      </MemoryRouter>
-    );
+describe('App routing and shell', () => {
+  it('renders public board on root with skip link', async () => {
+    renderAppAt(['/']);
 
     expect(screen.getByRole('link', { name: /skip to content/i })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /campus lost & found/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: /public lost & found board/i })
+    ).toBeInTheDocument();
+  });
+
+  it('redirects protected routes to login when unauthenticated', async () => {
+    renderAppAt(['/report-lost']);
+
+    expect(await screen.findByRole('heading', { name: /sign in/i })).toBeInTheDocument();
   });
 
   it('renders not found page for unknown routes', () => {
-    render(
-      <MemoryRouter
-        initialEntries={['/unknown-route']}
-        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-      >
-        <App />
-      </MemoryRouter>
-    );
+    renderAppAt(['/unknown-route']);
 
     expect(screen.getByRole('heading', { name: /page not found/i })).toBeInTheDocument();
   });

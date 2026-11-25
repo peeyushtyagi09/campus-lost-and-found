@@ -38,9 +38,9 @@ Health stays at `/health/*`. Auth and lost-report routes will be under `/api/v1`
 
 `appsettings.json` does not contain signing or encryption keys. `Jwt:SigningKey` and `Encryption:Key` must be supplied by the environment. Docker Compose reads them from `.env`, which is git-ignored. `.env.example` documents the variable names and uses obvious development placeholders.
 
-## D10. Client styling is deferred
+## D10. Client styling uses CSS Modules
 
-Phase 0 ships the Vite default stylesheet and a placeholder route. CSS Modules or Tailwind will be chosen in Phase 4 and recorded here.
+Phase 4 uses CSS Modules (`*.module.css`) paired with CSS custom properties in `src/index.css` instead of adding a utility framework dependency, keeping strict TypeScript typing and zero runtime overhead.
 
 ## D11. Starter pull request template
 
