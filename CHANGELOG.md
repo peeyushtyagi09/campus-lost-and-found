@@ -2,6 +2,13 @@
 
 All notable changes to the Campus Lost & Found Platform are documented in this file.
 
+## [1.0.0] - 2026-11-26
+
+### Added
+- **Found Reports & Matching (M2)**: `FoundReport` entity with encrypted storage/contact/verification fields, `/api/v1/found-reports`, `/api/v1/public/board?type=lost|found`, weighted `MatchingService` + `ChannelMatchingQueue` background worker + on-demand recomputation, and React `ReportFoundPage` + `MatchesPage`.
+- **Claims, Supervised Handover & Custody Record (M3)**: `Claim` workflow with encrypted verification answers, state-machine validation, Staff review queue, `Handover` completion requiring ID + witness checks, append-only SHA-256 hash-chained `custody_events` with tamper detection, and React `ClaimSubmitPage`, `MyClaimsPage`, `StaffDashboardPage`, `CustodyTimeline`.
+- **Disposal, Notifications & Production Hardening (M4)**: `DisposalService` + `RetentionHostedService` (90-day unclaimed item flagging, photo deletion, `Disposed` custody event), `NotificationService` + `MailKitOrConsoleEmailSender` (generic "log in to view" notices with zero PII), `AdminController` + append-only `AuditEvent` log, `/metrics`, `docker-compose.prod.yml`, and `axe-core` accessibility tests.
+
 ## [0.1.0] - 2026-11-26
 
 ### Added

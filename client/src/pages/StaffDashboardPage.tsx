@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { approveClaim, completeHandover, getReviewQueue, rejectClaim } from '../api/claims';
+import { approveDisposal, getEligibleDisposals } from '../api/disposals';
 import { ApiError } from '../api/http';
+import type { DisposalMethod } from '../types/admin';
 import styles from './BoardPage.module.css';
 
 export function StaffDashboardPage() {
@@ -10,6 +12,8 @@ export function StaffDashboardPage() {
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
   const [witnessChecked, setWitnessChecked] = useState<Record<string, boolean>>({});
   const [idChecked, setIdChecked] = useState<Record<string, boolean>>({});
+  const [disposalMethod, setDisposalMethod] = useState<Record<string, DisposalMethod>>({});
+  const [disposalNotes, setDisposalNotes] = useState<Record<string, string>>({});
   const [actionError, setActionError] = useState<string | null>(null);
 
   const { data, isLoading, isError, error } = useQuery({
@@ -17,7 +21,22 @@ export function StaffDashboardPage() {
     queryFn: () => getReviewQueue(),
   });
 
-  const refresh = () => void queryClient.invalidateQueries({ queryKey: ['staff-claims'] });
+  const disposalsQuery = useQuery({
+    queryKey: ['staff-disposals'],
+    queryFn: getEligibleDisposals,
+  });
+
+  const refresh = () => {
+    void queryClient.invalidateQueries({ queryKey: ['staff-claims'] });
+    void queryClient.invalidateQueries({ queryKey: ['staff-disposals'] });
+  };
+
+  const approveDisposalMutation = useMutation({
+    mutationFn: ({ id, method, notes }: { id: string; method: DisposalMethod; notes: string }) =>
+      approveDisposal(id, method, notes),
+    onSuccess: refresh,
+    onError: (err) => setActionError(err instanceof ApiError ? err.message : 'Disposal failed.'),
+  });
 
   const approveMutation = useMutation({
     mutationFn: ({ id, notes }: { id: string; notes: string }) => approveClaim(id, notes),
@@ -169,6 +188,71 @@ export function StaffDashboardPage() {
                   </button>
                 </div>
               ) : null}
+            </article>
+          ))}
+        </div>
+      )}
+
+      <h2 style={{ marginTop: '2rem' }}>Eligible for disposal (retention expired)</h2>
+      {disposalsQuery.isLoading ? (
+        <p role="status">Loading disposal queue...</p>
+      ) : !disposalsQuery.data || disposalsQuery.data.length === 0 ? (
+        <p className="alert-info">No items currently eligible for disposal.</p>
+      ) : (
+        <div className={styles.list}>
+          {disposalsQuery.data.map((item) => (
+            <article key={item.id} className={styles.reportCard}>
+              <h3>{item.title}</h3>
+              <p className="field-hint">
+                {item.campusArea} &middot; Found {item.dateLost}
+              </p>
+              <div className="field-group">
+                <label className="field-label" htmlFor={`disposal-method-${item.id}`}>
+                  Disposal method
+                </label>
+                <select
+                  id={`disposal-method-${item.id}`}
+                  className="field-select"
+                  value={disposalMethod[item.id] ?? 'Donate'}
+                  onChange={(e) =>
+                    setDisposalMethod((prev) => ({
+                      ...prev,
+                      [item.id]: e.target.value as DisposalMethod,
+                    }))
+                  }
+                >
+                  <option value="Donate">Donate</option>
+                  <option value="Recycle">Recycle</option>
+                  <option value="Destroy">Destroy</option>
+                </select>
+              </div>
+              <div className="field-group">
+                <label className="field-label" htmlFor={`disposal-notes-${item.id}`}>
+                  Disposal notes
+                </label>
+                <input
+                  id={`disposal-notes-${item.id}`}
+                  type="text"
+                  className="field-input"
+                  value={disposalNotes[item.id] ?? ''}
+                  onChange={(e) =>
+                    setDisposalNotes((prev) => ({ ...prev, [item.id]: e.target.value }))
+                  }
+                />
+              </div>
+              <button
+                type="button"
+                className="btn btn-danger"
+                onClick={() =>
+                  approveDisposalMutation.mutate({
+                    id: item.id,
+                    method: disposalMethod[item.id] ?? 'Donate',
+                    notes: disposalNotes[item.id] ?? 'Retention period expired',
+                  })
+                }
+              >
+                Approve disposal
+              </button>
             </article>
           ))}
         </div>

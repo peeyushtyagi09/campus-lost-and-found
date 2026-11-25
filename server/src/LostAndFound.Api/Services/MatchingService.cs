@@ -69,17 +69,20 @@ public sealed class MatchingService : IMatchingService
     private readonly ILostReportRepository _lostReports;
     private readonly IFoundReportRepository _foundReports;
     private readonly IMatchRepository _matches;
+    private readonly INotificationService _notifications;
     private readonly int _scoreThreshold;
 
     public MatchingService(
         ILostReportRepository lostReports,
         IFoundReportRepository foundReports,
         IMatchRepository matches,
+        INotificationService notifications,
         IOptions<MatchingOptions> matchingOptions)
     {
         _lostReports = lostReports;
         _foundReports = foundReports;
         _matches = matches;
+        _notifications = notifications;
         _scoreThreshold = matchingOptions.Value.ScoreThreshold;
     }
 
@@ -307,6 +310,12 @@ public sealed class MatchingService : IMatchingService
         };
 
         await _matches.UpsertSuggestedAsync(match, cancellationToken);
+        await _notifications.NotifyUserAsync(
+            lost.ReporterId,
+            NotificationType.MatchFound,
+            $"A possible match ({result.Score}/100) was found for '{lost.Title}'.",
+            match.Id.ToString(),
+            cancellationToken);
     }
 
     private async Task<IReadOnlyList<ItemMatchDto>> MapWithPublicFoundReportsAsync(

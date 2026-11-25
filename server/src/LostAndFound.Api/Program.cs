@@ -103,6 +103,8 @@ AddValidatedOptions<StorageOptions, StorageOptionsValidator>(builder, StorageOpt
 AddValidatedOptions<CorsOptions, CorsOptionsValidator>(builder, CorsOptions.SectionName);
 AddValidatedOptions<RateLimitOptions, RateLimitOptionsValidator>(builder, RateLimitOptions.SectionName);
 AddValidatedOptions<MatchingOptions, MatchingOptionsValidator>(builder, MatchingOptions.SectionName);
+AddValidatedOptions<RetentionOptions, RetentionOptionsValidator>(builder, RetentionOptions.SectionName);
+AddValidatedOptions<EmailOptions, EmailOptionsValidator>(builder, EmailOptions.SectionName);
 
 var storage = builder.Configuration.GetSection(StorageOptions.SectionName).Get<StorageOptions>() ?? new StorageOptions();
 builder.Services.Configure<FormOptions>(options =>
@@ -145,6 +147,15 @@ builder.Services.AddScoped<IHandoverRepository, MongoHandoverRepository>();
 builder.Services.AddScoped<ICustodyEventRepository, MongoCustodyEventRepository>();
 builder.Services.AddScoped<ICustodyService, CustodyService>();
 builder.Services.AddScoped<IClaimHandoverService, ClaimHandoverService>();
+builder.Services.AddScoped<IDisposalRepository, MongoDisposalRepository>();
+builder.Services.AddScoped<INotificationRepository, MongoNotificationRepository>();
+builder.Services.AddScoped<IAuditEventRepository, MongoAuditEventRepository>();
+builder.Services.AddScoped<IEmailSender, MailKitOrConsoleEmailSender>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<IDisposalService, DisposalService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddHostedService<RetentionHostedService>();
 builder.Services.AddScoped<IPublicBoardService, PublicBoardService>();
 
 builder.Services.AddHealthChecks()
@@ -223,10 +234,28 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else if (app.Configuration.GetValue<bool>("Https:Redirect"))
+{
+    app.UseHttpsRedirection();
+}
+
+var startedAt = DateTime.UtcNow;
+long totalRequests = 0;
+app.Use(async (context, next) =>
+{
+    Interlocked.Increment(ref totalRequests);
+    await next();
+});
 
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapGet("/metrics", () =>
+{
+    var uptimeSeconds = (DateTime.UtcNow - startedAt).TotalSeconds;
+    var body = $"# TYPE lost_and_found_http_requests_total counter\nlost_and_found_http_requests_total {Interlocked.Read(ref totalRequests)}\n# TYPE lost_and_found_uptime_seconds gauge\nlost_and_found_uptime_seconds {uptimeSeconds:F2}\n";
+    return Results.Text(body, "text/plain; version=0.0.4");
+}).AllowAnonymous();
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {
     Predicate = check => check.Tags.Contains("live"),

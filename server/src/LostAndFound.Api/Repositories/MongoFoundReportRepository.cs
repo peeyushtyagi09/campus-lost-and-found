@@ -114,6 +114,33 @@ public sealed class MongoFoundReportRepository : IFoundReportRepository
         return await _reports.Find(filter).ToListAsync(cancellationToken);
     }
 
+    public async Task<long> FlagEligibleForDisposalAsync(
+        DateTime createdBeforeUtc,
+        CancellationToken cancellationToken)
+    {
+        var filter = Builders<FoundReport>.Filter.And(
+            Builders<FoundReport>.Filter.In(r => r.Status, [ReportStatus.Open, ReportStatus.Matched]),
+            Builders<FoundReport>.Filter.Eq(r => r.EligibleForDisposal, false),
+            Builders<FoundReport>.Filter.Lte(r => r.CreatedAt, createdBeforeUtc));
+
+        var now = DateTime.UtcNow;
+        var update = Builders<FoundReport>.Update
+            .Set(r => r.EligibleForDisposal, true)
+            .Set(r => r.DisposalFlaggedAt, now);
+
+        var result = await _reports.UpdateManyAsync(filter, update, cancellationToken: cancellationToken);
+        return result.ModifiedCount;
+    }
+
+    public async Task<IReadOnlyList<FoundReport>> GetEligibleForDisposalAsync(CancellationToken cancellationToken)
+    {
+        var filter = Builders<FoundReport>.Filter.And(
+            Builders<FoundReport>.Filter.In(r => r.Status, [ReportStatus.Open, ReportStatus.Matched]),
+            Builders<FoundReport>.Filter.Eq(r => r.EligibleForDisposal, true));
+
+        return await _reports.Find(filter).SortBy(r => r.CreatedAt).ToListAsync(cancellationToken);
+    }
+
     public async Task UpdateAsync(FoundReport report, CancellationToken cancellationToken)
     {
         await _reports.ReplaceOneAsync(

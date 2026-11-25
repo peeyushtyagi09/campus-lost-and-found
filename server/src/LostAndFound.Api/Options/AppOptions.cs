@@ -214,3 +214,62 @@ public sealed class MatchingOptionsValidator : IValidateOptions<MatchingOptions>
         return ValidateOptionsResult.Success;
     }
 }
+
+public sealed class RetentionOptions
+{
+    public const string SectionName = "Retention";
+
+    public int DisposalDays { get; set; } = 90;
+
+    public int ExpiredAccountDays { get; set; } = 365;
+
+    public int SweepIntervalMinutes { get; set; } = 60;
+}
+
+public sealed class RetentionOptionsValidator : IValidateOptions<RetentionOptions>
+{
+    public ValidateOptionsResult Validate(string? name, RetentionOptions options)
+    {
+        if (options.DisposalDays < 1 || options.ExpiredAccountDays < 1 || options.SweepIntervalMinutes < 1)
+        {
+            return ValidateOptionsResult.Fail("Retention durations and sweep interval must be positive.");
+        }
+
+        return ValidateOptionsResult.Success;
+    }
+}
+
+public sealed class EmailOptions
+{
+    public const string SectionName = "Email";
+
+    public bool Enabled { get; set; }
+
+    public string SmtpHost { get; set; } = string.Empty;
+
+    public int SmtpPort { get; set; } = 587;
+
+    public string FromAddress { get; set; } = "noreply@campus-lost-and-found.local";
+
+    public string Username { get; set; } = string.Empty;
+
+    public string Password { get; set; } = string.Empty;
+}
+
+public sealed class EmailOptionsValidator : IValidateOptions<EmailOptions>
+{
+    public ValidateOptionsResult Validate(string? name, EmailOptions options)
+    {
+        if (options.Enabled && string.IsNullOrWhiteSpace(options.SmtpHost))
+        {
+            return ValidateOptionsResult.Fail("Email:SmtpHost is required when Email:Enabled is true.");
+        }
+
+        if (options.SmtpPort is < 1 or > 65535)
+        {
+            return ValidateOptionsResult.Fail("Email:SmtpPort must be between 1 and 65535.");
+        }
+
+        return ValidateOptionsResult.Success;
+    }
+}

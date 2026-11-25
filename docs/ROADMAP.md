@@ -12,7 +12,7 @@ Work stops at the end of each phase until the user says `next`.
 | 5 | M1 | Hardening, coverage gates, changelog, tag `v0.1.0` | Done |
 | 6 | M2 | Found reports and matching | Done |
 | 7 | M3 | Claims, supervised handover, custody hash chain | Done |
-| 8 | M4 | Disposal, notifications, production hardening, tag `v1.0.0` | Not started |
+| 8 | M4 | Disposal, notifications, production hardening, tag `v1.0.0` | Done |
 
 ## Definition of done (every phase)
 

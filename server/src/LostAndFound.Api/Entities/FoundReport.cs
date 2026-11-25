@@ -54,4 +54,10 @@ public sealed class FoundReport
 
     [FieldVisibility(Visibility.Private)]
     public DateTime UpdatedAt { get; set; }
+
+    [FieldVisibility(Visibility.Public)]
+    public bool EligibleForDisposal { get; set; }
+
+    [FieldVisibility(Visibility.Private)]
+    public DateTime? DisposalFlaggedAt { get; set; }
 }

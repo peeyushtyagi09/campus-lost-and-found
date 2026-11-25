@@ -75,6 +75,20 @@ Unhandled exceptions return `application/problem+json` with status 500, a generi
 | POST | `/api/v1/handovers/{claimId}/complete` | Staff | Complete supervised handover (`witnessConfirmed && idChecked`, sets `Returned`, records `HandedOver`) |
 | GET | `/api/v1/custody/{reportId}` | JWT | Custody timeline + hash-chain validity for finder, claimant, or Staff |
 
+## Implemented in Phase 8 (Disposal, Notifications, Admin, Observability)
+
+| Method | Route | Auth | Description |
+| --- | --- | --- | --- |
+| GET | `/api/v1/disposals/eligible` | Staff | Found items flagged after retention window |
+| POST | `/api/v1/disposals/{foundReportId}/approve` | Staff | Approve disposal (`Donate`/`Recycle`/`Destroy`), delete stored photo, write `Disposed` custody event |
+| GET | `/api/v1/notifications` | JWT | Caller's notifications |
+| POST | `/api/v1/notifications/{id}/read` | JWT | Mark notification as read |
+| GET | `/api/v1/admin/users` | Admin | List user accounts (id, displayName, role, createdAt) |
+| POST | `/api/v1/admin/staff` | Admin | Create staff account (audited) |
+| PATCH | `/api/v1/admin/users/{id}/role` | Admin | Update user role between `User` and `Staff` (audited) |
+| GET | `/api/v1/admin/audit-logs?page=&pageSize=` | Admin | Read-only audit log |
+| GET | `/metrics` | none | Prometheus-compatible request counter and uptime metrics |
+
 The route table in the master prompt lists `/uploads/photos`, `/media/{fileName}`, and `/public/board` without the `/api/v1` prefix. This draft keeps feature routes under `/api/v1` and documents that choice in `docs/DECISIONS.md`. Media stays easy to proxy: nginx forwards `/api/` and `/media/`. The media path will be confirmed when uploads are built in Phase 2. If the implemented media route must be exactly `/media/{fileName}`, nginx already proxies that prefix.
 
 Password policy: at least 10 characters with an uppercase letter, a lowercase letter, and a digit. Duplicate registration returns 409 with a message that does not reveal whether the email exists.

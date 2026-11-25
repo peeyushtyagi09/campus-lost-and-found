@@ -17,4 +17,10 @@ public interface IUserRepository
         DateTime? lockoutEnd,
         string? upgradedPasswordHash,
         CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<User>> ListAllAsync(CancellationToken cancellationToken);
+
+    Task UpdateRoleAsync(ObjectId id, UserRole role, CancellationToken cancellationToken);
+
+    Task<long> DeleteExpiredStandardUsersAsync(DateTime createdBeforeUtc, CancellationToken cancellationToken);
 }

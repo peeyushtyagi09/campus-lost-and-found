@@ -4,7 +4,7 @@ Visibility is part of the schema. Every entity property will carry `[FieldVisibi
 
 Phase 0 creates the `users` and `lost_reports` collections and their indexes. It does not insert documents and does not define entity classes yet. See `docs/DECISIONS.md`.
 
-Collection names used later: `found_reports`, `matches`, `claims`, `handovers`, `custody_events`, `disposals`, `notifications`.
+Collection names implemented: `users`, `lost_reports`, `found_reports`, `matches`, `claims`, `handovers`, `custody_events`, `disposals`, `notifications`, `audit_events`. Every entity property carries `[FieldVisibility(Visibility.Public|Private)]` enforced by reflection tests.
 
 ## users
 

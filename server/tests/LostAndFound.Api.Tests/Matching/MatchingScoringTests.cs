@@ -14,6 +14,7 @@ public sealed class MatchingScoringTests
             Substitute.For<ILostReportRepository>(),
             Substitute.For<IFoundReportRepository>(),
             Substitute.For<IMatchRepository>(),
+            Substitute.For<INotificationService>(),
             Microsoft.Extensions.Options.Options.Create(new MatchingOptions { ScoreThreshold = 50 }));
     }
 

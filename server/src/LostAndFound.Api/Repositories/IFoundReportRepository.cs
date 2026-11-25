@@ -27,5 +27,9 @@ public interface IFoundReportRepository
 
     Task<IReadOnlyList<FoundReport>> GetOpenByCategoryAsync(ItemCategory category, CancellationToken cancellationToken);
 
+    Task<long> FlagEligibleForDisposalAsync(DateTime createdBeforeUtc, CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<FoundReport>> GetEligibleForDisposalAsync(CancellationToken cancellationToken);
+
     Task UpdateAsync(FoundReport report, CancellationToken cancellationToken);
 }

@@ -110,4 +110,8 @@ export const handlers = [
       totalCount: 0,
     });
   }),
+
+  http.get('/api/v1/disposals/eligible', () => {
+    return HttpResponse.json([]);
+  }),
 ];

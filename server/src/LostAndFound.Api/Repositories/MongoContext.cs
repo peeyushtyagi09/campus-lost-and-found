@@ -14,6 +14,9 @@ public sealed class MongoContext
     public const string ClaimsCollection = "claims";
     public const string HandoversCollection = "handovers";
     public const string CustodyEventsCollection = "custody_events";
+    public const string DisposalsCollection = "disposals";
+    public const string NotificationsCollection = "notifications";
+    public const string AuditEventsCollection = "audit_events";
 
     private readonly IMongoDatabase _database;
 
@@ -35,6 +38,12 @@ public sealed class MongoContext
     public IMongoCollection<Handover> Handovers => _database.GetCollection<Handover>(HandoversCollection);
 
     public IMongoCollection<CustodyEvent> CustodyEvents => _database.GetCollection<CustodyEvent>(CustodyEventsCollection);
+
+    public IMongoCollection<Disposal> Disposals => _database.GetCollection<Disposal>(DisposalsCollection);
+
+    public IMongoCollection<Notification> Notifications => _database.GetCollection<Notification>(NotificationsCollection);
+
+    public IMongoCollection<AuditEvent> AuditEvents => _database.GetCollection<AuditEvent>(AuditEventsCollection);
 }
 
 public sealed class MongoIndexHostedService : IHostedService
@@ -144,6 +153,24 @@ public sealed class MongoIndexHostedService : IHostedService
             Builders<Handover>.IndexKeys.Ascending(h => h.ClaimId),
             new CreateIndexOptions { Name = "ux_handovers_claim", Unique = true });
         await _context.Handovers.Indexes.CreateOneAsync(handoverIndex, cancellationToken: cancellationToken);
+
+        var disposalIndex = new CreateIndexModel<Disposal>(
+            Builders<Disposal>.IndexKeys.Ascending(d => d.FoundReportId),
+            new CreateIndexOptions { Name = "ux_disposals_found_report", Unique = true });
+        await _context.Disposals.Indexes.CreateOneAsync(disposalIndex, cancellationToken: cancellationToken);
+
+        var notificationIndex = new CreateIndexModel<Notification>(
+            Builders<Notification>.IndexKeys
+                .Ascending(n => n.RecipientUserId)
+                .Ascending(n => n.IsRead)
+                .Descending(n => n.CreatedAt),
+            new CreateIndexOptions { Name = "ix_notifications_recipient_read_created" });
+        await _context.Notifications.Indexes.CreateOneAsync(notificationIndex, cancellationToken: cancellationToken);
+
+        var auditIndex = new CreateIndexModel<AuditEvent>(
+            Builders<AuditEvent>.IndexKeys.Descending(a => a.Timestamp),
+            new CreateIndexOptions { Name = "ix_audit_timestamp_desc" });
+        await _context.AuditEvents.Indexes.CreateOneAsync(auditIndex, cancellationToken: cancellationToken);
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

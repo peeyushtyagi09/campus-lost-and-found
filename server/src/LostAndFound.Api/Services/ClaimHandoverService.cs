@@ -54,6 +54,8 @@ public sealed class ClaimHandoverService : IClaimHandoverService
     private readonly ILostReportRepository _lostReports;
     private readonly IHandoverRepository _handovers;
     private readonly ICustodyService _custody;
+    private readonly INotificationService _notifications;
+    private readonly IAuditService _audit;
     private readonly IEncryptionService _encryption;
     private readonly ILogger<ClaimHandoverService> _logger;
 
@@ -63,6 +65,8 @@ public sealed class ClaimHandoverService : IClaimHandoverService
         ILostReportRepository lostReports,
         IHandoverRepository handovers,
         ICustodyService custody,
+        INotificationService notifications,
+        IAuditService audit,
         IEncryptionService encryption,
         ILogger<ClaimHandoverService> logger)
     {
@@ -71,6 +75,8 @@ public sealed class ClaimHandoverService : IClaimHandoverService
         _lostReports = lostReports;
         _handovers = handovers;
         _custody = custody;
+        _notifications = notifications;
+        _audit = audit;
         _encryption = encryption;
         _logger = logger;
     }
@@ -334,6 +340,21 @@ public sealed class ClaimHandoverService : IClaimHandoverService
             "Supervised handover completed with ID check and witness confirmation.",
             cancellationToken);
 
+        await _notifications.NotifyUserAsync(
+            claim.ClaimantId,
+            NotificationType.HandoverCompleted,
+            "Supervised handover completed for your claimed item.",
+            handover.Id.ToString(),
+            cancellationToken);
+
+        await _audit.RecordAsync(
+            "HandoverCompleted",
+            staffId,
+            UserRole.Staff,
+            claim.Id.ToString(),
+            "Completed supervised handover.",
+            cancellationToken);
+
         _logger.LogInformation("Completed supervised handover {HandoverId} for claim {ClaimId}.", handover.Id, claim.Id);
 
         return ServiceResult<HandoverDto>.Success(
@@ -407,6 +428,21 @@ public sealed class ClaimHandoverService : IClaimHandoverService
             staffId,
             UserRole.Staff,
             approve ? "Staff approved ownership claim." : "Staff rejected ownership claim.",
+            cancellationToken);
+
+        await _notifications.NotifyUserAsync(
+            claim.ClaimantId,
+            NotificationType.ClaimStatusChanged,
+            approve ? "Your claim has been approved. Visit the desk for supervised handover." : "Your claim status was updated.",
+            claim.Id.ToString(),
+            cancellationToken);
+
+        await _audit.RecordAsync(
+            approve ? "ClaimApproved" : "ClaimRejected",
+            staffId,
+            UserRole.Staff,
+            claim.Id.ToString(),
+            approve ? "Approved ownership claim." : "Rejected ownership claim.",
             cancellationToken);
 
         return ServiceResult<StaffClaimReviewDto>.Success(ToStaffReviewDto(claim, found));

@@ -30,3 +30,11 @@
   - `Testcontainers.MongoDb` updated to `4.17.0` (test-only dependency).
 - `npm --prefix client audit --omit=dev`:
   - `react-router-dom` 6.x (`GHSA-wrjc-x8rr-h8h6`, `GHSA-337j-9hxr-rhxg`: SSR hydration/open-redirect advisories not triggered in this SPA without SSR; upgrade path to v7 tracked via Dependabot) and `zod` (`GHSA-mrhx-c7xc-m3w5`: oversized collection DoS in client validation; bounded by server validation and max input lengths).
+
+## Production hardening & backups (M4)
+
+- `docker-compose.prod.yml` removes the exposed MongoDB port, enables read-only root filesystems with bounded `tmpfs` mounts, and enforces CPU/memory resource limits.
+- `RetentionHostedService` flags unclaimed found items after `Retention:DisposalDays` (default 90) and purges expired standard accounts after `Retention:ExpiredAccountDays` (default 365).
+- Sensitive actions (`StaffAccountCreated`, `UserRoleUpdated`, `ClaimApproved`, `ClaimRejected`, `HandoverCompleted`, `ItemDisposed`) are written to append-only `audit_events` and structured Serilog logs without PII.
+- Optional production HTTPS redirection is controlled via `Https:Redirect=true`.
+- **Backups**: schedule `mongodump --archive --gzip` on the `mongo_data` volume alongside encrypted volume snapshots of `uploads_data` (`Encryption:Key` stored in an external secret manager, never alongside backups).

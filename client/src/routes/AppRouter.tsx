@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router-dom';
 import { Layout } from '../components/Layout';
+import { AdminPage } from '../pages/AdminPage';
 import { ClaimSubmitPage } from '../pages/ClaimSubmitPage';
 import { CustodyPage } from '../pages/CustodyPage';
 import { LoginPage } from '../pages/LoginPage';
@@ -7,6 +8,7 @@ import { MatchesPage } from '../pages/MatchesPage';
 import { MyClaimsPage } from '../pages/MyClaimsPage';
 import { MyReportsPage } from '../pages/MyReportsPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
+import { NotificationsPage } from '../pages/NotificationsPage';
 import { PublicBoardPage } from '../pages/PublicBoardPage';
 import { RegisterPage } from '../pages/RegisterPage';
 import { ReportFoundPage } from '../pages/ReportFoundPage';
@@ -82,6 +84,22 @@ export function AppRouter() {
           element={
             <ProtectedRoute>
               <CustodyPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/notifications"
+          element={
+            <ProtectedRoute>
+              <NotificationsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminPage />
             </ProtectedRoute>
           }
         />

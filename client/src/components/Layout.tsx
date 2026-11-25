@@ -47,10 +47,22 @@ export function Layout() {
                     My Claims
                   </NavLink>
                 </li>
+                <li>
+                  <NavLink className="nav-link" to="/notifications">
+                    Notifications
+                  </NavLink>
+                </li>
                 {user?.role === 'Staff' ? (
                   <li>
                     <NavLink className="nav-link" to="/staff">
                       Staff Queue
+                    </NavLink>
+                  </li>
+                ) : null}
+                {user?.role === 'Admin' ? (
+                  <li>
+                    <NavLink className="nav-link" to="/admin">
+                      Admin
                     </NavLink>
                   </li>
                 ) : null}

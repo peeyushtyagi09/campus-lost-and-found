@@ -61,4 +61,30 @@ public sealed class MongoUserRepository : IUserRepository
             update,
             cancellationToken: cancellationToken);
     }
+
+    public async Task<IReadOnlyList<User>> ListAllAsync(CancellationToken cancellationToken)
+    {
+        return await _users
+            .Find(Builders<User>.Filter.Empty)
+            .SortByDescending(u => u.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task UpdateRoleAsync(ObjectId id, UserRole role, CancellationToken cancellationToken)
+    {
+        var update = Builders<User>.Update.Set(u => u.Role, role);
+        await _users.UpdateOneAsync(u => u.Id == id, update, cancellationToken: cancellationToken);
+    }
+
+    public async Task<long> DeleteExpiredStandardUsersAsync(
+        DateTime createdBeforeUtc,
+        CancellationToken cancellationToken)
+    {
+        var filter = Builders<User>.Filter.And(
+            Builders<User>.Filter.Eq(u => u.Role, UserRole.User),
+            Builders<User>.Filter.Lt(u => u.CreatedAt, createdBeforeUtc));
+
+        var result = await _users.DeleteManyAsync(filter, cancellationToken);
+        return result.DeletedCount;
+    }
 }
