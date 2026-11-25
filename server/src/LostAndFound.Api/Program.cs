@@ -102,6 +102,7 @@ AddValidatedOptions<EncryptionOptions, EncryptionOptionsValidator>(builder, Encr
 AddValidatedOptions<StorageOptions, StorageOptionsValidator>(builder, StorageOptions.SectionName);
 AddValidatedOptions<CorsOptions, CorsOptionsValidator>(builder, CorsOptions.SectionName);
 AddValidatedOptions<RateLimitOptions, RateLimitOptionsValidator>(builder, RateLimitOptions.SectionName);
+AddValidatedOptions<MatchingOptions, MatchingOptionsValidator>(builder, MatchingOptions.SectionName);
 
 var storage = builder.Configuration.GetSection(StorageOptions.SectionName).Get<StorageOptions>() ?? new StorageOptions();
 builder.Services.Configure<FormOptions>(options =>
@@ -133,6 +134,12 @@ builder.Services.AddScoped<IUserRepository, MongoUserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ILostReportRepository, MongoLostReportRepository>();
 builder.Services.AddScoped<ILostReportService, LostReportService>();
+builder.Services.AddScoped<IFoundReportRepository, MongoFoundReportRepository>();
+builder.Services.AddScoped<IFoundReportService, FoundReportService>();
+builder.Services.AddScoped<IMatchRepository, MongoMatchRepository>();
+builder.Services.AddSingleton<IMatchingQueue, ChannelMatchingQueue>();
+builder.Services.AddScoped<IMatchingService, MatchingService>();
+builder.Services.AddHostedService<MatchingBackgroundService>();
 builder.Services.AddScoped<IPublicBoardService, PublicBoardService>();
 
 builder.Services.AddHealthChecks()

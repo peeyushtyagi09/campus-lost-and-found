@@ -27,17 +27,18 @@ public sealed class PrivacyTests
     [Fact]
     public void PublicReportDto_ContainsOnlyPropertiesMappedFromPublicEntityFields()
     {
-        var dtoToEntityMap = new Dictionary<string, string>(StringComparer.Ordinal)
+        var dtoToEntityMap = new Dictionary<string, (Type EntityType, string PropertyName)>(StringComparer.Ordinal)
         {
-            [nameof(PublicReportDto.Id)] = nameof(LostReport.Id),
-            [nameof(PublicReportDto.Title)] = nameof(LostReport.Title),
-            [nameof(PublicReportDto.Category)] = nameof(LostReport.Category),
-            [nameof(PublicReportDto.PublicDescription)] = nameof(LostReport.PublicDescription),
-            [nameof(PublicReportDto.CampusArea)] = nameof(LostReport.CampusArea),
-            [nameof(PublicReportDto.DateLost)] = nameof(LostReport.DateLost),
-            [nameof(PublicReportDto.PhotoUrl)] = nameof(LostReport.PhotoFileName),
-            [nameof(PublicReportDto.Status)] = nameof(LostReport.Status),
-            [nameof(PublicReportDto.PostedAt)] = nameof(LostReport.CreatedAt)
+            [nameof(PublicReportDto.Id)] = (typeof(LostReport), nameof(LostReport.Id)),
+            [nameof(PublicReportDto.Title)] = (typeof(LostReport), nameof(LostReport.Title)),
+            [nameof(PublicReportDto.Category)] = (typeof(LostReport), nameof(LostReport.Category)),
+            [nameof(PublicReportDto.PublicDescription)] = (typeof(LostReport), nameof(LostReport.PublicDescription)),
+            [nameof(PublicReportDto.CampusArea)] = (typeof(LostReport), nameof(LostReport.CampusArea)),
+            [nameof(PublicReportDto.DateLost)] = (typeof(LostReport), nameof(LostReport.DateLost)),
+            [nameof(PublicReportDto.PhotoUrl)] = (typeof(LostReport), nameof(LostReport.PhotoFileName)),
+            [nameof(PublicReportDto.Status)] = (typeof(LostReport), nameof(LostReport.Status)),
+            [nameof(PublicReportDto.PostedAt)] = (typeof(LostReport), nameof(LostReport.CreatedAt)),
+            [nameof(PublicReportDto.HeldAt)] = (typeof(FoundReport), nameof(FoundReport.HeldAt))
         };
 
         var dtoProperties = typeof(PublicReportDto).GetProperties(BindingFlags.Public | BindingFlags.Instance);
@@ -45,10 +46,10 @@ public sealed class PrivacyTests
         {
             dtoToEntityMap.Should().ContainKey(
                 dtoProperty.Name,
-                $"{nameof(PublicReportDto)}.{dtoProperty.Name} must explicitly map from a Public LostReport property.");
+                $"{nameof(PublicReportDto)}.{dtoProperty.Name} must explicitly map from a Public entity property.");
 
-            var sourceName = dtoToEntityMap[dtoProperty.Name];
-            var entityProperty = typeof(LostReport).GetProperty(sourceName);
+            var (entityType, sourceName) = dtoToEntityMap[dtoProperty.Name];
+            var entityProperty = entityType.GetProperty(sourceName);
             entityProperty.Should().NotBeNull();
 
             var visibility = entityProperty!.GetCustomAttribute<FieldVisibilityAttribute>();

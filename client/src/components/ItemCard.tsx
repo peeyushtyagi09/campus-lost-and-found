@@ -30,8 +30,10 @@ export function ItemCard({ report }: ItemCardProps) {
           <span className={styles.badge}>{report.status}</span>
         </div>
         <p className={styles.meta}>
-          {categoryLabel} &middot; {report.campusArea} &middot; Lost on {report.dateLost}
+          {categoryLabel} &middot; {report.campusArea} &middot;{' '}
+          {report.heldAt ? `Found ${report.dateLost}` : `Lost on ${report.dateLost}`}
         </p>
+        {report.heldAt ? <p className={styles.meta}>Held at: {report.heldAt}</p> : null}
         {report.publicDescription ? (
           <p className={styles.description}>{report.publicDescription}</p>
         ) : null}

@@ -9,13 +9,16 @@ public sealed class PublicBoardService : IPublicBoardService
 {
     private const int MaxPageSize = 50;
     private readonly ILostReportRepository _lostReports;
+    private readonly IFoundReportRepository _foundReports;
 
-    public PublicBoardService(ILostReportRepository lostReports)
+    public PublicBoardService(ILostReportRepository lostReports, IFoundReportRepository foundReports)
     {
         _lostReports = lostReports;
+        _foundReports = foundReports;
     }
 
-    public async Task<PagedResponse<PublicReportDto>> GetBoardAsync(
+    public async Task<ServiceResult<PagedResponse<PublicReportDto>>> GetBoardAsync(
+        string type,
         ItemCategory? category,
         string? area,
         string? query,
@@ -23,10 +26,33 @@ public sealed class PublicBoardService : IPublicBoardService
         int pageSize,
         CancellationToken cancellationToken)
     {
+        var normalizedType = string.IsNullOrWhiteSpace(type) ? "lost" : type.Trim().ToLowerInvariant();
+        if (normalizedType is not ("lost" or "found"))
+        {
+            return ServiceResult<PagedResponse<PublicReportDto>>.Failure(
+                StatusCodes.Status400BadRequest,
+                "Board type must be 'lost' or 'found'.");
+        }
+
         var normalizedPage = Math.Max(page, 1);
         var normalizedSize = Math.Clamp(pageSize, 1, MaxPageSize);
 
-        var (items, totalCount) = await _lostReports.SearchPublicAsync(
+        if (normalizedType == "found")
+        {
+            var (foundItems, foundTotal) = await _foundReports.SearchPublicAsync(
+                category,
+                area,
+                query,
+                normalizedPage,
+                normalizedSize,
+                cancellationToken);
+
+            var foundDtos = foundItems.Select(ReportMappings.ToPublicDto).ToList();
+            return ServiceResult<PagedResponse<PublicReportDto>>.Success(
+                new PagedResponse<PublicReportDto>(foundDtos, normalizedPage, normalizedSize, foundTotal));
+        }
+
+        var (lostItems, lostTotal) = await _lostReports.SearchPublicAsync(
             category,
             area,
             query,
@@ -34,7 +60,8 @@ public sealed class PublicBoardService : IPublicBoardService
             normalizedSize,
             cancellationToken);
 
-        var dtos = items.Select(ReportMappings.ToPublicDto).ToList();
-        return new PagedResponse<PublicReportDto>(dtos, normalizedPage, normalizedSize, totalCount);
+        var lostDtos = lostItems.Select(ReportMappings.ToPublicDto).ToList();
+        return ServiceResult<PagedResponse<PublicReportDto>>.Success(
+            new PagedResponse<PublicReportDto>(lostDtos, normalizedPage, normalizedSize, lostTotal));
     }
 }

@@ -10,6 +10,51 @@ export interface PublicReport {
   photoUrl: string | null;
   status: ReportStatus;
   postedAt: string;
+  heldAt?: string | null;
+}
+
+export interface FoundOwnerReport {
+  id: string;
+  title: string;
+  category: ItemCategory;
+  publicDescription: string;
+  campusArea: string;
+  dateFound: string;
+  heldAt: string;
+  photoFileName: string | null;
+  photoUrl: string | null;
+  status: ReportStatus;
+  storageNotes: string;
+  finderContact: string;
+  verificationDetails: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateFoundReportRequest {
+  title: string;
+  category: ItemCategory;
+  publicDescription: string;
+  campusArea: string;
+  dateFound: string;
+  heldAt: string;
+  photoFileName: string | null;
+  storageNotes: string;
+  finderContact: string;
+  verificationDetails: string;
+}
+
+export type MatchStatus = 'Suggested' | 'Confirmed' | 'Dismissed';
+
+export interface ItemMatch {
+  id: string;
+  lostReportId: string;
+  foundReportId: string;
+  score: number;
+  explanation: string;
+  status: MatchStatus;
+  createdAt: string;
+  foundItem: PublicReport;
 }
 
 export interface OwnerReport {

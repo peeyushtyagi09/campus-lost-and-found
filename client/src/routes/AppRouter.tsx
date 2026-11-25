@@ -1,10 +1,12 @@
 import { Route, Routes } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { LoginPage } from '../pages/LoginPage';
+import { MatchesPage } from '../pages/MatchesPage';
 import { MyReportsPage } from '../pages/MyReportsPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { PublicBoardPage } from '../pages/PublicBoardPage';
 import { RegisterPage } from '../pages/RegisterPage';
+import { ReportFoundPage } from '../pages/ReportFoundPage';
 import { ReportLostPage } from '../pages/ReportLostPage';
 import { ProtectedRoute } from './ProtectedRoute';
 
@@ -24,10 +26,26 @@ export function AppRouter() {
           }
         />
         <Route
+          path="/report-found"
+          element={
+            <ProtectedRoute>
+              <ReportFoundPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/my-reports"
           element={
             <ProtectedRoute>
               <MyReportsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/matches"
+          element={
+            <ProtectedRoute>
+              <MatchesPage />
             </ProtectedRoute>
           }
         />

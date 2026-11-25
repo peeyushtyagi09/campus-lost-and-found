@@ -2,7 +2,10 @@ import type { ItemCategory, PagedResponse } from '../types/common';
 import type { PublicReport } from '../types/reports';
 import { apiFetch } from './http';
 
+export type BoardType = 'lost' | 'found';
+
 export interface BoardQuery {
+  type?: BoardType;
   category?: ItemCategory | '';
   area?: string;
   q?: string;
@@ -12,6 +15,7 @@ export interface BoardQuery {
 
 export function getPublicBoard(query: BoardQuery): Promise<PagedResponse<PublicReport>> {
   const params = new URLSearchParams();
+  params.set('type', query.type ?? 'lost');
   if (query.category) {
     params.set('category', query.category);
   }

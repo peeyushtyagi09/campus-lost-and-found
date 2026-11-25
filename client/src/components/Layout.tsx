@@ -24,12 +24,22 @@ export function Layout() {
               <>
                 <li>
                   <NavLink className="nav-link" to="/report-lost">
-                    Report Lost Item
+                    Report Lost
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink className="nav-link" to="/report-found">
+                    Report Found
                   </NavLink>
                 </li>
                 <li>
                   <NavLink className="nav-link" to="/my-reports">
                     My Reports
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink className="nav-link" to="/matches">
+                    Possible Matches
                   </NavLink>
                 </li>
                 <li>

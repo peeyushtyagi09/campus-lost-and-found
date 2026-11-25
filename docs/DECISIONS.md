@@ -70,3 +70,7 @@ Five consecutive failed password verifications lock the account for 15 minutes (
 
 `FluentValidationActionFilter` validates controller request DTOs using registered `IValidator<T>` instances without using the deprecated `FluentValidation.AspNetCore` auto-validation adapter, returning RFC 7807 `ValidationProblemDetails` with zero compiler warnings.
 
+## D18. Matching score formula (M2)
+
+`MatchingService.ScorePair` requires matching `Category` (`+10` base, `0` if different), adds `+30` for exact case-insensitive `CampusArea` match, `+20` when `DateFound` falls within `0..30` days after `DateLost`, and up to `+40` from Jaccard token overlap on `Title` and `PublicDescription` (max `100`, default threshold `50`). Photos are never compared.
+

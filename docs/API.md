@@ -45,7 +45,22 @@ Unhandled exceptions return `application/problem+json` with status 500, a generi
 
 | Method | Route | Auth | Description |
 | --- | --- | --- | --- |
-| GET | `/api/v1/public/board?category=&area=&q=&page=&pageSize=` | none | Paginated `PublicReportDto` list (`Open` / `Matched` only, newest first, max `pageSize` 50) |
+| GET | `/api/v1/public/board?type=lost\|found&category=&area=&q=&page=&pageSize=` | none | Paginated `PublicReportDto` list (`Open` / `Matched` only, newest first, max `pageSize` 50) |
+
+## Implemented in Phase 6 (Found Reports & Matching)
+
+| Method | Route | Auth | Description |
+| --- | --- | --- | --- |
+| POST | `/api/v1/found-reports` | JWT | Log a found item handed to campus desk (encrypts storage, contact, verification details) |
+| GET | `/api/v1/found-reports/mine?page=&pageSize=` | JWT | Finder's paginated found reports |
+| GET | `/api/v1/found-reports/{id}` | JWT | Finder or Staff see full details; others get `404` |
+| PUT | `/api/v1/found-reports/{id}` | JWT | Finder or Staff update |
+| DELETE | `/api/v1/found-reports/{id}` | JWT | Finder or Staff soft-close |
+| GET | `/api/v1/matches/mine` | JWT | Possible matches for caller's lost reports (public found-item data only) |
+| GET | `/api/v1/matches` | Staff | All matches |
+| POST | `/api/v1/matches/run` | JWT | Recompute match suggestions on demand |
+| POST | `/api/v1/matches/{id}/confirm` | JWT | Owner/Staff confirms match |
+| POST | `/api/v1/matches/{id}/dismiss` | JWT | Owner/Staff dismisses match |
 
 The route table in the master prompt lists `/uploads/photos`, `/media/{fileName}`, and `/public/board` without the `/api/v1` prefix. This draft keeps feature routes under `/api/v1` and documents that choice in `docs/DECISIONS.md`. Media stays easy to proxy: nginx forwards `/api/` and `/media/`. The media path will be confirmed when uploads are built in Phase 2. If the implemented media route must be exactly `/media/{fileName}`, nginx already proxies that prefix.
 

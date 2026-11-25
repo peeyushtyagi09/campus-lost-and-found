@@ -194,3 +194,23 @@ public sealed class RateLimitOptionsValidator : IValidateOptions<RateLimitOption
         return ValidateOptionsResult.Success;
     }
 }
+
+public sealed class MatchingOptions
+{
+    public const string SectionName = "Matching";
+
+    public int ScoreThreshold { get; set; } = 50;
+}
+
+public sealed class MatchingOptionsValidator : IValidateOptions<MatchingOptions>
+{
+    public ValidateOptionsResult Validate(string? name, MatchingOptions options)
+    {
+        if (options.ScoreThreshold < 1 || options.ScoreThreshold > 100)
+        {
+            return ValidateOptionsResult.Fail("Matching:ScoreThreshold must be between 1 and 100.");
+        }
+
+        return ValidateOptionsResult.Success;
+    }
+}

@@ -21,7 +21,9 @@ public sealed class PublicBoardController : ControllerBase
     [HttpGet("board")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(PagedResponse<PublicReportDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetBoard(
+        [FromQuery] string type = "lost",
         [FromQuery] ItemCategory? category = null,
         [FromQuery] string? area = null,
         [FromQuery] string? q = null,
@@ -29,7 +31,15 @@ public sealed class PublicBoardController : ControllerBase
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        var result = await _boardService.GetBoardAsync(category, area, q, page, pageSize, cancellationToken);
-        return Ok(result);
+        var result = await _boardService.GetBoardAsync(type, category, area, q, page, pageSize, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return Problem(
+                statusCode: result.StatusCode,
+                title: result.ErrorTitle,
+                type: "https://tools.ietf.org/html/rfc7807");
+        }
+
+        return Ok(result.Value);
     }
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { getPublicBoard } from '../api/board';
+import { getPublicBoard, type BoardType } from '../api/board';
 import { ItemCard } from '../components/ItemCard';
 import { CAMPUS_AREAS, CATEGORY_LABELS, ITEM_CATEGORIES, type ItemCategory } from '../types/common';
 import styles from './BoardPage.module.css';
@@ -9,6 +9,7 @@ import styles from './BoardPage.module.css';
 const PAGE_SIZE = 12;
 
 export function PublicBoardPage() {
+  const [boardType, setBoardType] = useState<BoardType>('lost');
   const [category, setCategory] = useState<ItemCategory | ''>('');
   const [area, setArea] = useState('');
   const [searchInput, setSearchInput] = useState('');
@@ -16,9 +17,10 @@ export function PublicBoardPage() {
   const [page, setPage] = useState(1);
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['public-board', category, area, queryText, page],
+    queryKey: ['public-board', boardType, category, area, queryText, page],
     queryFn: () =>
       getPublicBoard({
+        type: boardType,
         category,
         area,
         q: queryText,
@@ -44,9 +46,43 @@ export function PublicBoardPage() {
             Only public item descriptions and location-free photos are shown here.
           </p>
         </div>
-        <Link className="btn btn-primary" to="/report-lost">
-          Report a Lost Item
-        </Link>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <Link className="btn btn-primary" to="/report-lost">
+            Report a Lost Item
+          </Link>
+          <Link className="btn btn-secondary" to="/report-found">
+            Report a Found Item
+          </Link>
+        </div>
+      </div>
+
+      <div
+        role="group"
+        aria-label="Board item type"
+        style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}
+      >
+        <button
+          type="button"
+          className={`btn ${boardType === 'lost' ? 'btn-primary' : 'btn-secondary'}`}
+          aria-pressed={boardType === 'lost'}
+          onClick={() => {
+            setBoardType('lost');
+            setPage(1);
+          }}
+        >
+          Lost items
+        </button>
+        <button
+          type="button"
+          className={`btn ${boardType === 'found' ? 'btn-primary' : 'btn-secondary'}`}
+          aria-pressed={boardType === 'found'}
+          onClick={() => {
+            setBoardType('found');
+            setPage(1);
+          }}
+        >
+          Found items
+        </button>
       </div>
 
       <form className={styles.filters} onSubmit={handleSearchSubmit} aria-label="Filter items">

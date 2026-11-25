@@ -6,7 +6,8 @@ namespace LostAndFound.Api.Services;
 
 public interface IPublicBoardService
 {
-    Task<PagedResponse<PublicReportDto>> GetBoardAsync(
+    Task<ServiceResult<PagedResponse<PublicReportDto>>> GetBoardAsync(
+        string type,
         ItemCategory? category,
         string? area,
         string? query,

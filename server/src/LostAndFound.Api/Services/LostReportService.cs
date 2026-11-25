@@ -13,17 +13,20 @@ public sealed class LostReportService : ILostReportService
     private readonly ILostReportRepository _reports;
     private readonly IEncryptionService _encryption;
     private readonly IFileStorage _fileStorage;
+    private readonly IMatchingQueue _matchingQueue;
     private readonly ILogger<LostReportService> _logger;
 
     public LostReportService(
         ILostReportRepository reports,
         IEncryptionService encryption,
         IFileStorage fileStorage,
+        IMatchingQueue matchingQueue,
         ILogger<LostReportService> logger)
     {
         _reports = reports;
         _encryption = encryption;
         _fileStorage = fileStorage;
+        _matchingQueue = matchingQueue;
         _logger = logger;
     }
 
@@ -69,6 +72,7 @@ public sealed class LostReportService : ILostReportService
         };
 
         await _reports.CreateAsync(report, cancellationToken);
+        await _matchingQueue.EnqueueLostAsync(report.Id, cancellationToken);
         _logger.LogInformation("Created lost report {ReportId} for user {UserId}.", report.Id, reporterId);
 
         var dto = ReportMappings.ToOwnerDto(report, privateDetails, contactPhone, contactEmail);
