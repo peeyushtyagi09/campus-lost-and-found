@@ -57,4 +57,23 @@ describe('ReportLostPage', () => {
     fireEvent.change(input, { target: { files: [oversized] } });
     expect(await screen.findByText(/photo must be 5 mb or smaller/i)).toBeInTheDocument();
   });
+
+  it('uploads valid photo, submits report, and redirects to my reports', async () => {
+    seedAuthenticatedSession();
+    const user = userEvent.setup();
+    renderAppAt(['/report-lost']);
+
+    await user.type(await screen.findByLabelText(/item title/i), 'Silver Keys');
+    await user.type(screen.getByLabelText(/public description/i), 'Keychain with blue tag');
+    await user.type(screen.getByLabelText(/private identifying details/i), 'Brass key #42');
+    await user.type(screen.getByLabelText(/contact phone/i), '5551234567');
+    await user.type(screen.getByLabelText(/contact email/i), 'alice@campus.edu');
+
+    const input = screen.getByLabelText(/optional photo/i) as HTMLInputElement;
+    const validFile = new File([new Uint8Array([1, 2, 3])], 'keys.jpg', { type: 'image/jpeg' });
+    fireEvent.change(input, { target: { files: [validFile] } });
+
+    await user.click(screen.getByRole('button', { name: /submit lost report/i }));
+    expect(await screen.findByRole('heading', { name: /my lost reports/i })).toBeInTheDocument();
+  });
 });

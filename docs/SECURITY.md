@@ -2,32 +2,31 @@
 
 ## Privacy by design
 
-- Public board DTOs are built from an allow-list. They are not entities with fields removed.
-- Private values are encrypted at rest (AES-256-GCM) once the field exists. Phase 0 stores no personal data.
-- Photos will be decoded, stripped of EXIF, IPTC, XMP, and ICC, and stored under a GUID name. The original file is never kept.
-- Passwords are hashed with `PasswordHasher<T>`, never logged, and never returned. Login will lock out after repeated failures.
-- Logs must not contain private fields, tokens, or passwords. The exception middleware logs the server-side exception and returns a generic ProblemDetails body.
+- Public board DTOs are built from an allow-list (`ReportMappings.ToPublicDto`). They never map everything and strip fields afterward.
+- Every entity property is classified `[FieldVisibility(Visibility.Public|Private)]` and enforced by `FieldVisibilityTests.EveryEntityPropertyIsClassified`.
+- Private fields (`Email`, `PrivateDetails`, `ContactPhone`, `ContactEmail`) are encrypted at rest with AES-256-GCM (`AesGcmEncryptionService`), using a 32-byte key from `Encryption:Key` and a random 12-byte nonce per value (`base64(nonce|ciphertext|tag)`).
+- Email lookup uses a keyed HMAC-SHA256 hash (`HmacEmailHasher`) derived from `Encryption:Key` via HKDF.
+- Uploaded photos are decoded with ImageSharp, validated against JPEG/PNG/WebP and 8000x8000 px bounds, auto-oriented, stripped of EXIF/IPTC/XMP/ICC/CICP profiles, resized to max 1600 px, re-encoded, and stored under a random GUID filename.
+- Passwords are hashed with ASP.NET Core Identity `PasswordHasher<User>`, never logged, and never returned. Five consecutive failures lock an account for 15 minutes (`423 Locked`).
 
-## Phase 0 controls
+## OWASP ASVS L1 controls
 
-| Control | Status |
+| Control | Implementation |
 | --- | --- |
-| Options validated on startup | In place. The process refuses to start without Mongo, JWT, and encryption settings |
-| Security headers | In place, including HSTS on HTTPS in Production |
-| CORS allow-list | In place. No wildcard origin |
-| Rate limiting | Policies registered. Auth and upload routes will opt in when those controllers exist. A global limit is active |
-| Body size limit | Kestrel and form limits follow `Storage:MaxPhotoBytes` |
-| Exception details | ProblemDetails never includes the exception message or stack trace |
-| Secrets in git | `.env` is ignored. `.env.example` holds obvious development placeholders |
-| Container user | API image runs as the non-root `$APP_UID` user |
-| Swagger | Development only |
+| Options validated on startup | `ValidateOnStart` on `MongoOptions`, `JwtOptions`, `EncryptionOptions`, `StorageOptions`, `CorsOptions`, `RateLimitOptions` |
+| Security headers | `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, `Content-Security-Policy: default-src 'none'`, HSTS on HTTPS in Production |
+| CORS allow-list | Configured via `Cors:AllowedOrigins`; wildcard `*` rejected at startup |
+| Rate limiting | Fixed-window limits (`auth`, `uploads`, and global limiter) returning 429 RFC 7807 `ProblemDetails` |
+| Body size limit | Kestrel + FormOptions + `UploadsController` enforce `Storage:MaxPhotoBytes` (5 MB default) |
+| Error handling | `ExceptionHandlingMiddleware` returns RFC 7807 `ProblemDetails` with no exception message or stack trace |
+| Input validation | FluentValidation via `FluentValidationActionFilter` (server) and Zod (client); contact info rejected in public report fields |
+| Authorization | JWT HS256 (60-min lifetime, 1-min clock skew), `RequireStaff`, `RequireAdmin`, and 404 (not 403) on non-owner lost report access |
+| Container hardening | API image runs as non-root `$APP_UID` |
 
-## Authentication (Phase 1 — implemented)
+## Dependency audit (Phase 5)
 
-JWT bearer access tokens, HS256, signing key at least 32 bytes, 60-minute lifetime, clock skew of one minute. Claims: `sub`, `role`, `jti`. Policies: `RequireStaff`, `RequireAdmin`. Passwords hashed with `PasswordHasher<User>`; 5 failed login attempts trigger a 15-minute lockout (`423 Locked`), reset on successful authentication. AES-256-GCM encryption (`AesGcmEncryptionService`) and keyed `EmailHash` (`HmacEmailHasher`) are active for `users`.
-
-## Still open
-
-Dependency audit gates, coverage thresholds, login lockout, encryption implementation, and the privacy test suite land in later phases. See `docs/ROADMAP.md`.
-
-Production HTTPS redirection and a locked-down compose file are Milestone 4. Phase 0 serves HTTP inside the Docker network so health checks work without a certificate. HSTS is sent only on HTTPS requests.
+- `dotnet list server/LostAndFound.sln package --vulnerable --include-transitive`:
+  - `SixLabors.ImageSharp` `3.1.12` has 6 documented 3.1.x advisories suppressed via `NuGetAuditSuppress` because `3.2+`/`4.x` require a build-time `SixLaborsLicenseKey` in Release builds (see `docs/DECISIONS.md` D14); mitigated by 5 MB cap, format allow-list (JPEG/PNG/WebP), and 8000x8000 dimension checks prior to pixel decoding.
+  - `Testcontainers.MongoDb` updated to `4.17.0` (test-only dependency).
+- `npm --prefix client audit --omit=dev`:
+  - `react-router-dom` 6.x (`GHSA-wrjc-x8rr-h8h6`, `GHSA-337j-9hxr-rhxg`: SSR hydration/open-redirect advisories not triggered in this SPA without SSR; upgrade path to v7 tracked via Dependabot) and `zod` (`GHSA-mrhx-c7xc-m3w5`: oversized collection DoS in client validation; bounded by server validation and max input lengths).

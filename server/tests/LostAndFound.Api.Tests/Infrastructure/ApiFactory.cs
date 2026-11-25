@@ -17,8 +17,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
         try
         {
-            _container = new MongoDbBuilder()
-                .WithImage("mongo:7")
+            _container = new MongoDbBuilder("mongo:7")
                 .Build();
             await _container.StartAsync();
             _connectionString = _container.GetConnectionString();

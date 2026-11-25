@@ -1,0 +1,5 @@
+# Default owners for the Campus Lost & Found Platform
+* @peeyushtyagi09
+/server/src/LostAndFound.Api/Privacy/ @peeyushtyagi09
+/server/tests/LostAndFound.Api.Tests/Privacy/ @peeyushtyagi09
+/docs/SECURITY.md @peeyushtyagi09

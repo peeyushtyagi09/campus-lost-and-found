@@ -76,7 +76,7 @@ export function ReportLostPage() {
   });
 
   useEffect(() => {
-    if (!selectedFile) {
+    if (!selectedFile || typeof URL.createObjectURL !== 'function') {
       setPreviewUrl(null);
       return;
     }
@@ -84,7 +84,9 @@ export function ReportLostPage() {
     const url = URL.createObjectURL(selectedFile);
     setPreviewUrl(url);
     return () => {
-      URL.revokeObjectURL(url);
+      if (typeof URL.revokeObjectURL === 'function') {
+        URL.revokeObjectURL(url);
+      }
     };
   }, [selectedFile]);
 

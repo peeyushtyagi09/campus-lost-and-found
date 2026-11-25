@@ -17,7 +17,7 @@ dotnet test server/LostAndFound.sln
 
 Docker should be running so the tests start a MongoDB 7 container via Testcontainers. When Docker is unavailable locally (outside CI), `ApiFactory` falls back to `Mongo2Go`.
 
-Coverage is collected in CI with Coverlet (`XPlat Code Coverage`) and uploaded as the `server-coverage` artifact. A numeric coverage gate arrives in Phase 5.
+Coverage is collected in CI with Coverlet (`XPlat Code Coverage`) and enforces at least 80% line coverage across `LostAndFound.Api.Services.*` and `LostAndFound.Api.Privacy.*`. Client CI enforces at least 70% coverage via Vitest (`npm run test:coverage`).
 
 ## Client
 

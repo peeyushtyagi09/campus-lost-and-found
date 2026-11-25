@@ -27,8 +27,31 @@ jobs:
       - name: Build
         run: dotnet build server/LostAndFound.sln --no-restore --configuration Release
 
-      - name: Test
+      - name: Test with coverage
         run: dotnet test server/LostAndFound.sln --no-build --configuration Release --collect:"XPlat Code Coverage" --results-directory coverage
+
+      - name: Enforce 80% coverage on Services and Privacy
+        run: |
+          python3 - <<'PY'
+          import glob, sys, xml.etree.ElementTree as ET
+          files = glob.glob("coverage/**/coverage.cobertura.xml", recursive=True)
+          if not files:
+              sys.exit("No Cobertura coverage report generated.")
+          covered = valid = 0
+          for path in files:
+              root = ET.parse(path).getroot()
+              for cls in root.findall(".//class"):
+                  name = cls.attrib.get("name", "")
+                  if name.startswith("LostAndFound.Api.Services.") or name.startswith("LostAndFound.Api.Privacy."):
+                      for line in cls.findall("./lines/line"):
+                          valid += 1
+                          if int(line.attrib.get("hits", "0")) > 0:
+                              covered += 1
+          rate = (covered / valid * 100.0) if valid else 0.0
+          print(f"Services + Privacy line coverage: {rate:.2f}% ({covered}/{valid})")
+          if rate < 80.0:
+              sys.exit(f"Coverage {rate:.2f}% is below 80% gate.")
+          PY
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4
@@ -57,14 +80,17 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Format check
+        run: npm run format:check
+
       - name: Lint
         run: npm run lint
 
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Test
-        run: npm test
+      - name: Test with coverage
+        run: npm run test:coverage
 
       - name: Build
         run: npm run build

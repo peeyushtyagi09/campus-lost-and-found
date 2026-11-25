@@ -9,7 +9,7 @@ Work stops at the end of each phase until the user says `next`.
 | 2 | M1-B | Lost reports and sanitized photo upload | Done |
 | 3 | M1-C | Public board, privacy test suite, dev seed | Done |
 | 4 | M1 | React client for auth, reports, and the board | Done |
-| 5 | M1 | Hardening, coverage gates, changelog, tag `v0.1.0` | Not started |
+| 5 | M1 | Hardening, coverage gates, changelog, tag `v0.1.0` | Done |
 | 6 | M2 | Found reports and matching | Not started |
 | 7 | M3 | Claims, supervised handover, custody hash chain | Not started |
 | 8 | M4 | Disposal, notifications, production hardening, tag `v1.0.0` | Not started |
