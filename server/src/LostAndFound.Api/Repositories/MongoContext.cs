@@ -1,3 +1,4 @@
+using LostAndFound.Api.Entities;
 using LostAndFound.Api.Options;
 using Microsoft.Extensions.Options;
 using MongoDB.Bson;
@@ -18,7 +19,7 @@ public sealed class MongoContext
         _database = client.GetDatabase(options.Value.DatabaseName);
     }
 
-    public IMongoCollection<BsonDocument> Users => _database.GetCollection<BsonDocument>(UsersCollection);
+    public IMongoCollection<User> Users => _database.GetCollection<User>(UsersCollection);
 
     public IMongoCollection<BsonDocument> LostReports => _database.GetCollection<BsonDocument>(LostReportsCollection);
 }
@@ -38,8 +39,8 @@ internal sealed class MongoIndexHostedService : IHostedService
     {
         _logger.LogInformation("Ensuring MongoDB indexes exist.");
 
-        var emailHash = new CreateIndexModel<BsonDocument>(
-            Builders<BsonDocument>.IndexKeys.Ascending("EmailHash"),
+        var emailHash = new CreateIndexModel<User>(
+            Builders<User>.IndexKeys.Ascending(user => user.EmailHash),
             new CreateIndexOptions { Name = "ux_users_email_hash", Unique = true });
         await _context.Users.Indexes.CreateOneAsync(emailHash, cancellationToken: cancellationToken);
 

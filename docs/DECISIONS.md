@@ -58,3 +58,15 @@ Server integration tests use `Testcontainers.MongoDb` (`mongo:7`) whenever Docke
 
 `SixLabors.ImageSharp` is pinned to `3.1.12` (with `NuGetAuditSuppress` for its 6 known 3.1.x advisories) because ImageSharp `3.2.0+` / `4.x` requires a build-time `SixLaborsLicenseKey` in Release builds. `NuGetAudit` and `TreatWarningsAsErrors=true` remain active for all packages, and Phase 2 image decoding enforces a 5 MB body limit, format allow-list (JPEG/PNG/WebP), and dimension bounds before pixel decoding. Organizations with a Six Labors license key can upgrade to `3.2+`/`4.x`. The React 18 client uses Vite, TypeScript `strict: true`, ESLint flat config (`no-explicit-any: error`), Prettier, Vitest, React Testing Library, and MSW.
 
+## D15. EmailHash pepper derived via HKDF
+
+`EmailHash` uses HMAC-SHA256 over the trimmed, lowercased email with a 32-byte key derived from `Encryption:Key` via HKDF (`campus-lost-and-found:email-hash:v1`). This avoids requiring an extra environment variable while keeping lookup hashes keyed with a server secret.
+
+## D16. Account lockout and strict RBAC policies
+
+Five consecutive failed password verifications lock the account for 15 minutes (`423 Locked`), and any valid login resets `FailedLoginCount` and `LockoutEnd`. Authorization policies follow strict least privilege: `RequireStaff` requires `Staff`, and `RequireAdmin` requires `Admin`.
+
+## D17. FluentValidation action filter
+
+`FluentValidationActionFilter` validates controller request DTOs using registered `IValidator<T>` instances without using the deprecated `FluentValidation.AspNetCore` auto-validation adapter, returning RFC 7807 `ValidationProblemDetails` with zero compiler warnings.
+

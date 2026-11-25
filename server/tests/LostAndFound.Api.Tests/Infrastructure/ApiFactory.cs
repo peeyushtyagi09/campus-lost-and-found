@@ -66,7 +66,11 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 ["Encryption:Key"] = Convert.ToBase64String(Enumerable.Repeat((byte)7, 32).ToArray()),
                 ["Storage:UploadPath"] = Path.Combine(Path.GetTempPath(), "lost-and-found-tests"),
                 ["Storage:MaxPhotoBytes"] = "5242880",
-                ["Cors:AllowedOrigins:0"] = "http://localhost:5173"
+                ["Cors:AllowedOrigins:0"] = "http://localhost:5173",
+                ["RateLimiting:AuthPermitLimit"] = "500",
+                ["RateLimiting:UploadPermitLimit"] = "500",
+                ["RateLimiting:GlobalPermitLimit"] = "1000",
+                ["RateLimiting:WindowSeconds"] = "60"
             });
         });
 

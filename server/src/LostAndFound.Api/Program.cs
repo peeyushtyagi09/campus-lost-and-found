@@ -1,13 +1,21 @@
+using System.Text;
 using System.Threading.RateLimiting;
 using FluentValidation;
+using LostAndFound.Api.Entities;
 using LostAndFound.Api.Middleware;
 using LostAndFound.Api.Options;
+using LostAndFound.Api.Privacy;
 using LostAndFound.Api.Repositories;
+using LostAndFound.Api.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
 using Serilog;
 
@@ -18,12 +26,67 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Services(services)
     .Enrich.FromLogContext());
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<FluentValidationActionFilter>();
+});
 builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Campus Lost & Found API", Version = "v1" });
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Bearer authorization header. Example: \"Bearer {token}\"",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
+    });
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            []
+        }
+    });
+});
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
-builder.Services.AddAuthorization();
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer();
+
+builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+    .Configure<IOptions<JwtOptions>>((jwtBearerOptions, jwtOptionsAccessor) =>
+    {
+        var jwt = jwtOptionsAccessor.Value;
+        jwtBearerOptions.MapInboundClaims = false;
+        jwtBearerOptions.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwt.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwt.Audience,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.SigningKey)),
+            ClockSkew = TimeSpan.FromMinutes(1),
+            NameClaimType = "sub",
+            RoleClaimType = "role"
+        };
+    });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(AuthPolicies.RequireStaff, policy => policy.RequireRole(nameof(UserRole.Staff)));
+    options.AddPolicy(AuthPolicies.RequireAdmin, policy => policy.RequireRole(nameof(UserRole.Admin)));
+});
+
 builder.Services.AddResponseCompression(options =>
 {
     options.EnableForHttps = true;
@@ -55,6 +118,13 @@ builder.Services.AddSingleton<IMongoClient>(serviceProvider =>
 });
 builder.Services.AddSingleton<MongoContext>();
 builder.Services.AddHostedService<MongoIndexHostedService>();
+
+builder.Services.AddSingleton<IEncryptionService, AesGcmEncryptionService>();
+builder.Services.AddSingleton<IEmailHasher, HmacEmailHasher>();
+builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<IUserRepository, MongoUserRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddHealthChecks()
     .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"])
@@ -97,11 +167,16 @@ builder.Services.AddRateLimiter(rateLimiter =>
             cancellationToken: cancellationToken);
     };
 
-    var rateLimits = builder.Configuration.GetSection(RateLimitOptions.SectionName).Get<RateLimitOptions>() ?? new RateLimitOptions();
-    var window = TimeSpan.FromSeconds(Math.Max(rateLimits.WindowSeconds, 1));
-
-    rateLimiter.AddPolicy(RateLimitOptions.AuthPolicy, httpContext => FixedWindow(httpContext, rateLimits.AuthPermitLimit, window));
-    rateLimiter.AddPolicy(RateLimitOptions.UploadPolicy, httpContext => FixedWindow(httpContext, rateLimits.UploadPermitLimit, window));
+    rateLimiter.AddPolicy(RateLimitOptions.AuthPolicy, httpContext =>
+    {
+        var limits = httpContext.RequestServices.GetRequiredService<IOptions<RateLimitOptions>>().Value;
+        return FixedWindow(httpContext, limits.AuthPermitLimit, TimeSpan.FromSeconds(Math.Max(limits.WindowSeconds, 1)));
+    });
+    rateLimiter.AddPolicy(RateLimitOptions.UploadPolicy, httpContext =>
+    {
+        var limits = httpContext.RequestServices.GetRequiredService<IOptions<RateLimitOptions>>().Value;
+        return FixedWindow(httpContext, limits.UploadPermitLimit, TimeSpan.FromSeconds(Math.Max(limits.WindowSeconds, 1)));
+    });
     rateLimiter.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
     {
         if (httpContext.Request.Path.StartsWithSegments("/health"))
@@ -109,7 +184,8 @@ builder.Services.AddRateLimiter(rateLimiter =>
             return RateLimitPartition.GetNoLimiter("health");
         }
 
-        return FixedWindow(httpContext, rateLimits.GlobalPermitLimit, window);
+        var limits = httpContext.RequestServices.GetRequiredService<IOptions<RateLimitOptions>>().Value;
+        return FixedWindow(httpContext, limits.GlobalPermitLimit, TimeSpan.FromSeconds(Math.Max(limits.WindowSeconds, 1)));
     });
 });
 
@@ -127,6 +203,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health/live", new HealthCheckOptions

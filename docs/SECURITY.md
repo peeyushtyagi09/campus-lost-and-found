@@ -22,9 +22,9 @@
 | Container user | API image runs as the non-root `$APP_UID` user |
 | Swagger | Development only |
 
-## Authentication (Phase 1)
+## Authentication (Phase 1 — implemented)
 
-JWT bearer access tokens, HS256, signing key at least 32 bytes, 60-minute lifetime, clock skew of one minute. Claims: `sub`, `role`, `jti`. Policies: `RequireStaff`, `RequireAdmin`.
+JWT bearer access tokens, HS256, signing key at least 32 bytes, 60-minute lifetime, clock skew of one minute. Claims: `sub`, `role`, `jti`. Policies: `RequireStaff`, `RequireAdmin`. Passwords hashed with `PasswordHasher<User>`; 5 failed login attempts trigger a 15-minute lockout (`423 Locked`), reset on successful authentication. AES-256-GCM encryption (`AesGcmEncryptionService`) and keyed `EmailHash` (`HmacEmailHasher`) are active for `users`.
 
 ## Still open
 

@@ -21,13 +21,18 @@ Both return JSON:
 
 Unhandled exceptions return `application/problem+json` with status 500, a generic title, and no exception message or stack trace.
 
-## Contract for M1 (not implemented yet)
+## Implemented in Phase 1 (Auth)
 
 | Method | Route | Auth | Description |
 | --- | --- | --- | --- |
-| POST | `/api/v1/auth/register` | none | `{ displayName, email, password }` → 201 `{ user }` |
-| POST | `/api/v1/auth/login` | none | `{ email, password }` → 200 `{ accessToken, expiresAt, user }` |
-| GET | `/api/v1/auth/me` | JWT | Current user |
+| POST | `/api/v1/auth/register` | none | `{ displayName, email, password }` → 201 `{ user }` (409 neutral error on duplicate) |
+| POST | `/api/v1/auth/login` | none | `{ email, password }` → 200 `{ accessToken, expiresAt, user }` (423 when locked out) |
+| GET | `/api/v1/auth/me` | JWT | Current user `{ id, displayName, email, role }` |
+
+## Contract for M1 (remaining in Phases 2–3)
+
+| Method | Route | Auth | Description |
+| --- | --- | --- | --- |
 | POST | `/api/v1/lost-reports` | JWT | Create a lost report |
 | GET | `/api/v1/lost-reports/mine` | JWT | Owner's reports, including private fields |
 | GET | `/api/v1/lost-reports/{id}` | JWT | Owner or Staff see the full report. Everyone else gets 404 |
