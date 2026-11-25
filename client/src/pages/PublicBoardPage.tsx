@@ -163,7 +163,7 @@ export function PublicBoardPage() {
         <>
           <div className={styles.grid}>
             {data.items.map((item) => (
-              <ItemCard key={item.id} report={item} />
+              <ItemCard key={item.id} report={item} showClaimLink={boardType === 'found'} />
             ))}
           </div>
 

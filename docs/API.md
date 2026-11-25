@@ -62,6 +62,19 @@ Unhandled exceptions return `application/problem+json` with status 500, a generi
 | POST | `/api/v1/matches/{id}/confirm` | JWT | Owner/Staff confirms match |
 | POST | `/api/v1/matches/{id}/dismiss` | JWT | Owner/Staff dismisses match |
 
+## Implemented in Phase 7 (Claims, Handover, Custody Record)
+
+| Method | Route | Auth | Description |
+| --- | --- | --- | --- |
+| POST | `/api/v1/claims` | JWT | Submit claim with encrypted verification answers (records `ClaimSubmitted`) |
+| GET | `/api/v1/claims/mine` | JWT | Claimant's own claims |
+| POST | `/api/v1/claims/{id}/withdraw` | JWT | Withdraw pending claim |
+| GET | `/api/v1/claims/review?status=` | Staff | Staff claim review queue with decrypted verification details |
+| POST | `/api/v1/claims/{id}/approve` | Staff | Approve pending claim (`ClaimApproved`) |
+| POST | `/api/v1/claims/{id}/reject` | Staff | Reject pending claim (`Rejected`) |
+| POST | `/api/v1/handovers/{claimId}/complete` | Staff | Complete supervised handover (`witnessConfirmed && idChecked`, sets `Returned`, records `HandedOver`) |
+| GET | `/api/v1/custody/{reportId}` | JWT | Custody timeline + hash-chain validity for finder, claimant, or Staff |
+
 The route table in the master prompt lists `/uploads/photos`, `/media/{fileName}`, and `/public/board` without the `/api/v1` prefix. This draft keeps feature routes under `/api/v1` and documents that choice in `docs/DECISIONS.md`. Media stays easy to proxy: nginx forwards `/api/` and `/media/`. The media path will be confirmed when uploads are built in Phase 2. If the implemented media route must be exactly `/media/{fileName}`, nginx already proxies that prefix.
 
 Password policy: at least 10 characters with an uppercase letter, a lowercase letter, and a digit. Duplicate registration returns 409 with a message that does not reveal whether the email exists.

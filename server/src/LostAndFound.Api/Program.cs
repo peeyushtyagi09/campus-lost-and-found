@@ -140,6 +140,11 @@ builder.Services.AddScoped<IMatchRepository, MongoMatchRepository>();
 builder.Services.AddSingleton<IMatchingQueue, ChannelMatchingQueue>();
 builder.Services.AddScoped<IMatchingService, MatchingService>();
 builder.Services.AddHostedService<MatchingBackgroundService>();
+builder.Services.AddScoped<IClaimRepository, MongoClaimRepository>();
+builder.Services.AddScoped<IHandoverRepository, MongoHandoverRepository>();
+builder.Services.AddScoped<ICustodyEventRepository, MongoCustodyEventRepository>();
+builder.Services.AddScoped<ICustodyService, CustodyService>();
+builder.Services.AddScoped<IClaimHandoverService, ClaimHandoverService>();
 builder.Services.AddScoped<IPublicBoardService, PublicBoardService>();
 
 builder.Services.AddHealthChecks()

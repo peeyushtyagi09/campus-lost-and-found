@@ -1,10 +1,10 @@
 using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using System.Text;
 using LostAndFound.Api.Entities;
 using LostAndFound.Api.Options;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using SecurityClaim = System.Security.Claims.Claim;
 
 namespace LostAndFound.Api.Services;
 
@@ -31,9 +31,9 @@ public sealed class JwtTokenService : IJwtTokenService
 
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim("role", user.Role.ToString()),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new SecurityClaim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new SecurityClaim("role", user.Role.ToString()),
+            new SecurityClaim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
         var token = new JwtSecurityToken(

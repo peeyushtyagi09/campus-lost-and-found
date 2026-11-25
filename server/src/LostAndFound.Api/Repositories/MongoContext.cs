@@ -11,6 +11,9 @@ public sealed class MongoContext
     public const string LostReportsCollection = "lost_reports";
     public const string FoundReportsCollection = "found_reports";
     public const string MatchesCollection = "matches";
+    public const string ClaimsCollection = "claims";
+    public const string HandoversCollection = "handovers";
+    public const string CustodyEventsCollection = "custody_events";
 
     private readonly IMongoDatabase _database;
 
@@ -26,6 +29,12 @@ public sealed class MongoContext
     public IMongoCollection<FoundReport> FoundReports => _database.GetCollection<FoundReport>(FoundReportsCollection);
 
     public IMongoCollection<ItemMatch> Matches => _database.GetCollection<ItemMatch>(MatchesCollection);
+
+    public IMongoCollection<Claim> Claims => _database.GetCollection<Claim>(ClaimsCollection);
+
+    public IMongoCollection<Handover> Handovers => _database.GetCollection<Handover>(HandoversCollection);
+
+    public IMongoCollection<CustodyEvent> CustodyEvents => _database.GetCollection<CustodyEvent>(CustodyEventsCollection);
 }
 
 public sealed class MongoIndexHostedService : IHostedService
@@ -105,6 +114,36 @@ public sealed class MongoIndexHostedService : IHostedService
                 new CreateIndexOptions { Name = "ix_matches_reporter_status_score" })
         };
         await _context.Matches.Indexes.CreateManyAsync(matchIndexes, cancellationToken);
+
+        var claimIndexes = new[]
+        {
+            new CreateIndexModel<Claim>(
+                Builders<Claim>.IndexKeys
+                    .Ascending(c => c.ClaimantId)
+                    .Descending(c => c.CreatedAt),
+                new CreateIndexOptions { Name = "ix_claims_claimant_created" }),
+            new CreateIndexModel<Claim>(
+                Builders<Claim>.IndexKeys
+                    .Ascending(c => c.Status)
+                    .Descending(c => c.CreatedAt),
+                new CreateIndexOptions { Name = "ix_claims_status_created" }),
+            new CreateIndexModel<Claim>(
+                Builders<Claim>.IndexKeys.Ascending(c => c.FoundReportId),
+                new CreateIndexOptions { Name = "ix_claims_found_report" })
+        };
+        await _context.Claims.Indexes.CreateManyAsync(claimIndexes, cancellationToken);
+
+        var custodyIndex = new CreateIndexModel<CustodyEvent>(
+            Builders<CustodyEvent>.IndexKeys
+                .Ascending(e => e.ReportId)
+                .Ascending(e => e.SequenceNumber),
+            new CreateIndexOptions { Name = "ux_custody_report_seq", Unique = true });
+        await _context.CustodyEvents.Indexes.CreateOneAsync(custodyIndex, cancellationToken: cancellationToken);
+
+        var handoverIndex = new CreateIndexModel<Handover>(
+            Builders<Handover>.IndexKeys.Ascending(h => h.ClaimId),
+            new CreateIndexOptions { Name = "ux_handovers_claim", Unique = true });
+        await _context.Handovers.Indexes.CreateOneAsync(handoverIndex, cancellationToken: cancellationToken);
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

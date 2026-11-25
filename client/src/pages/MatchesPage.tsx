@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { confirmMatch, dismissMatch, getMyMatches, runMatching } from '../api/matches';
 import { ItemCard } from '../components/ItemCard';
 import styles from './BoardPage.module.css';
@@ -84,6 +85,13 @@ export function MatchesPage() {
                         Dismiss
                       </button>
                     </>
+                  ) : match.status === 'Confirmed' ? (
+                    <Link
+                      className="btn btn-primary"
+                      to={`/claim/${match.foundReportId}?lostReportId=${match.lostReportId}`}
+                    >
+                      Claim this item
+                    </Link>
                   ) : null}
                 </div>
               </div>

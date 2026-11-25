@@ -14,6 +14,7 @@ public sealed class FoundReportService : IFoundReportService
     private readonly IEncryptionService _encryption;
     private readonly IFileStorage _fileStorage;
     private readonly IMatchingQueue _matchingQueue;
+    private readonly ICustodyService _custody;
     private readonly ILogger<FoundReportService> _logger;
 
     public FoundReportService(
@@ -21,12 +22,14 @@ public sealed class FoundReportService : IFoundReportService
         IEncryptionService encryption,
         IFileStorage fileStorage,
         IMatchingQueue matchingQueue,
+        ICustodyService custody,
         ILogger<FoundReportService> logger)
     {
         _reports = reports;
         _encryption = encryption;
         _fileStorage = fileStorage;
         _matchingQueue = matchingQueue;
+        _custody = custody;
         _logger = logger;
     }
 
@@ -73,6 +76,20 @@ public sealed class FoundReportService : IFoundReportService
         };
 
         await _reports.CreateAsync(report, cancellationToken);
+        await _custody.RecordEventAsync(
+            report.Id,
+            CustodyEventType.Received,
+            finderId,
+            UserRole.User,
+            $"Item received at {report.HeldAt}.",
+            cancellationToken);
+        await _custody.RecordEventAsync(
+            report.Id,
+            CustodyEventType.Stored,
+            finderId,
+            UserRole.Staff,
+            $"Item logged in custody at {report.HeldAt}.",
+            cancellationToken);
         await _matchingQueue.EnqueueFoundAsync(report.Id, cancellationToken);
         _logger.LogInformation("Created found report {ReportId} for user {UserId}.", report.Id, finderId);
 
