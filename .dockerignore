@@ -1,0 +1,13 @@
+**/bin/
+**/obj/
+**/.vs/
+**/TestResults/
+**/*.user
+**/node_modules/
+**/dist/
+**/uploads/
+**/.git/
+.mongo2go/
+.env
+.env.*
+!.env.example
