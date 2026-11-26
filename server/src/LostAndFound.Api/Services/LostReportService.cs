@@ -11,6 +11,7 @@ public sealed class LostReportService : ILostReportService
 {
     private const int MaxPageSize = 50;
     private readonly ILostReportRepository _reports;
+    private readonly IMatchRepository _matches;
     private readonly IEncryptionService _encryption;
     private readonly IFileStorage _fileStorage;
     private readonly IMatchingQueue _matchingQueue;
@@ -18,12 +19,14 @@ public sealed class LostReportService : ILostReportService
 
     public LostReportService(
         ILostReportRepository reports,
+        IMatchRepository matches,
         IEncryptionService encryption,
         IFileStorage fileStorage,
         IMatchingQueue matchingQueue,
         ILogger<LostReportService> logger)
     {
         _reports = reports;
+        _matches = matches;
         _encryption = encryption;
         _fileStorage = fileStorage;
         _matchingQueue = matchingQueue;
@@ -205,6 +208,43 @@ public sealed class LostReportService : ILostReportService
             _logger.LogInformation("Closed lost report {ReportId}.", report.Id);
         }
 
+        return ServiceResult<bool>.Success(true, StatusCodes.Status204NoContent);
+    }
+
+    public async Task<ServiceResult<bool>> DeleteAsync(
+        string reportId,
+        string callerUserId,
+        bool isStaff,
+        CancellationToken cancellationToken)
+    {
+        if (!ObjectId.TryParse(reportId, out var id) || !ObjectId.TryParse(callerUserId, out var callerId))
+        {
+            return ServiceResult<bool>.Failure(StatusCodes.Status404NotFound, "Report not found.");
+        }
+
+        var report = await _reports.GetByIdAsync(id, cancellationToken);
+        if (report is null || (report.ReporterId != callerId && !isStaff))
+        {
+            return ServiceResult<bool>.Failure(StatusCodes.Status404NotFound, "Report not found.");
+        }
+
+        if (report.Status == ReportStatus.Claimed || report.Status == ReportStatus.Returned)
+        {
+            return ServiceResult<bool>.Failure(
+                StatusCodes.Status409Conflict,
+                "Claimed or returned reports cannot be deleted.");
+        }
+
+        await _matches.DeleteByLostReportAsync(report.Id, cancellationToken);
+        await _reports.DeleteAsync(report.Id, cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(report.PhotoFileName)
+            && !await _reports.IsPhotoReferencedAsync(report.PhotoFileName, report.Id, cancellationToken))
+        {
+            await _fileStorage.DeleteAsync(report.PhotoFileName, cancellationToken);
+        }
+
+        _logger.LogInformation("Permanently deleted lost report {ReportId}.", report.Id);
         return ServiceResult<bool>.Success(true, StatusCodes.Status204NoContent);
     }
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
@@ -27,7 +28,13 @@ const reportFoundSchema = z.object({
     .min(2, 'Security desk name is required.')
     .max(80)
     .refine((val) => !containsContactInfo(val), 'HeldAt must not contain contact info.'),
-  dateFound: z.string().min(1, 'Date found is required.'),
+  dateFound: z
+    .string()
+    .min(1, 'Date found is required.')
+    .refine((val) => {
+      const parsed = new Date(val);
+      return !Number.isNaN(parsed.getTime()) && parsed.getTime() <= Date.now() + 86_400_000;
+    }, 'Date found cannot be in the future.'),
   publicDescription: z
     .string()
     .trim()
@@ -36,7 +43,7 @@ const reportFoundSchema = z.object({
       (val) => !containsContactInfo(val),
       'Public description must not contain contact info.'
     ),
-  storageNotes: z.string().trim().max(500),
+  storageNotes: z.string().trim().max(500, 'Storage notes must be at most 500 characters.'),
   finderContact: z.string().trim().min(3, 'Finder contact is required.').max(120),
   verificationDetails: z.string().trim().min(3, 'Verification details are required.').max(1000),
 });
@@ -45,6 +52,7 @@ type ReportFoundFormValues = z.infer<typeof reportFoundSchema>;
 
 export function ReportFoundPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -109,7 +117,12 @@ export function ReportFoundPage() {
         photoFileName = uploaded.fileName;
       }
       await createFoundReport({ ...values, photoFileName });
-      navigate('/');
+      await queryClient.invalidateQueries({ queryKey: ['public-board'] });
+      await queryClient.invalidateQueries({ queryKey: ['my-found-reports'] });
+      await queryClient.invalidateQueries({ queryKey: ['my-matches'] });
+      navigate('/?type=found', {
+        state: { notice: 'Found item reported! Showing Found items on the board.' },
+      });
     } catch (err) {
       setServerError(err instanceof ApiError ? err.message : 'Unable to submit found report.');
     }
@@ -236,6 +249,11 @@ export function ReportFoundPage() {
             className="field-input"
             {...register('storageNotes')}
           />
+          {errors.storageNotes ? (
+            <p className="field-error" role="alert">
+              {errors.storageNotes.message}
+            </p>
+          ) : null}
         </div>
 
         <div className="field-group">

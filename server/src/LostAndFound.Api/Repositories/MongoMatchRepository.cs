@@ -66,4 +66,9 @@ public sealed class MongoMatchRepository : IMatchRepository
     {
         await _matches.ReplaceOneAsync(m => m.Id == match.Id, match, cancellationToken: cancellationToken);
     }
+
+    public async Task DeleteByLostReportAsync(ObjectId lostReportId, CancellationToken cancellationToken)
+    {
+        await _matches.DeleteManyAsync(m => m.LostReportId == lostReportId, cancellationToken);
+    }
 }

@@ -14,4 +14,6 @@ public interface IMatchRepository
     Task<IReadOnlyList<ItemMatch>> GetAllAsync(CancellationToken cancellationToken);
 
     Task UpdateAsync(ItemMatch match, CancellationToken cancellationToken);
+
+    Task DeleteByLostReportAsync(ObjectId lostReportId, CancellationToken cancellationToken);
 }

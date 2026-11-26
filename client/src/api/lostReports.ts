@@ -40,3 +40,9 @@ export function closeLostReport(id: string): Promise<void> {
     method: 'DELETE',
   });
 }
+
+export function deleteLostReport(id: string): Promise<void> {
+  return apiFetch<void>(`/api/v1/lost-reports/${encodeURIComponent(id)}?permanent=true`, {
+    method: 'DELETE',
+  });
+}

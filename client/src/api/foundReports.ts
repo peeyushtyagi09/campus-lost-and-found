@@ -21,3 +21,9 @@ export function getMyFoundReports(
     `/api/v1/found-reports/mine?${params.toString()}`
   );
 }
+
+export function closeFoundReport(id: string): Promise<void> {
+  return apiFetch<void>(`/api/v1/found-reports/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+}

@@ -104,11 +104,17 @@ public sealed class LostReportsController : ControllerBase
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Close(string id, CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Close(
+        string id,
+        [FromQuery] bool permanent = false,
+        CancellationToken cancellationToken = default)
     {
         var userId = User.FindFirstValue("sub") ?? string.Empty;
         var isStaff = User.IsInRole(nameof(UserRole.Staff));
-        var result = await _service.CloseAsync(id, userId, isStaff, cancellationToken);
+        var result = permanent
+            ? await _service.DeleteAsync(id, userId, isStaff, cancellationToken)
+            : await _service.CloseAsync(id, userId, isStaff, cancellationToken);
         if (!result.IsSuccess)
         {
             return Problem(

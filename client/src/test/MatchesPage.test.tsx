@@ -90,6 +90,11 @@ describe('MatchesPage', () => {
     expect(screen.queryByText(/hidden@finder.edu/)).not.toBeInTheDocument();
     expect(screen.queryByText(/HIDDEN_ENGRAVING/)).not.toBeInTheDocument();
 
+    await user.click(screen.getByRole('button', { name: /found silver watch/i }));
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
     await user.click(screen.getByRole('button', { name: /confirm match/i }));
     await waitFor(() => expect(confirmed).toBe(true));
   });

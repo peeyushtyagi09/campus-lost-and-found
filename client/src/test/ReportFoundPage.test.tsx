@@ -24,8 +24,31 @@ describe('ReportFoundPage', () => {
   it('submits a found item report cleanly', async () => {
     seedSession();
     let submitted = false;
+    let boardTypeRequested: string | null = null;
 
     server.use(
+      http.get('/api/v1/public/board', ({ request }) => {
+        boardTypeRequested = new URL(request.url).searchParams.get('type');
+        return HttpResponse.json({
+          items: [
+            {
+              id: 'found-created-1',
+              title: 'Found Silver Keys',
+              category: 'Phone',
+              publicDescription: 'Set of 3 keys on blue ring',
+              campusArea: 'Library',
+              dateLost: '2026-11-26',
+              photoUrl: null,
+              status: 'Open',
+              postedAt: '2026-11-26T09:00:00Z',
+              heldAt: 'Main Security Desk',
+            },
+          ],
+          page: 1,
+          pageSize: 12,
+          totalCount: 1,
+        });
+      }),
       http.post('/api/v1/found-reports', async ({ request }) => {
         const body = (await request.json()) as Record<string, unknown>;
         submitted = true;
@@ -57,5 +80,8 @@ describe('ReportFoundPage', () => {
     expect(
       await screen.findByRole('heading', { name: /public lost & found board/i })
     ).toBeInTheDocument();
+    expect(await screen.findByText(/Found Silver Keys/i)).toBeInTheDocument();
+    expect(boardTypeRequested).toBe('found');
+    expect(screen.getByText(/Found item reported/i)).toBeInTheDocument();
   });
 });

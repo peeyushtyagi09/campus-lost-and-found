@@ -1,20 +1,65 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { getPublicBoard, type BoardType } from '../api/board';
+import { deleteLostReport, getMyLostReports } from '../api/lostReports';
 import { ItemCard } from '../components/ItemCard';
+import { ItemDetailModal } from '../components/ItemDetailModal';
+import { useAuth } from '../hooks/useAuth';
 import { CAMPUS_AREAS, CATEGORY_LABELS, ITEM_CATEGORIES, type ItemCategory } from '../types/common';
+import type { PublicReport } from '../types/reports';
 import styles from './BoardPage.module.css';
 
 const PAGE_SIZE = 12;
 
 export function PublicBoardPage() {
-  const [boardType, setBoardType] = useState<BoardType>('lost');
+  const { isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const boardType: BoardType = searchParams.get('type') === 'found' ? 'found' : 'lost';
+  const locationNotice =
+    typeof (location.state as { notice?: unknown } | null)?.notice === 'string'
+      ? (location.state as { notice: string }).notice
+      : null;
   const [category, setCategory] = useState<ItemCategory | ''>('');
   const [area, setArea] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [queryText, setQueryText] = useState('');
   const [page, setPage] = useState(1);
+  const [selectedReport, setSelectedReport] = useState<PublicReport | null>(null);
+
+  const selectBoardType = (nextType: BoardType) => {
+    setPage(1);
+    setSelectedReport(null);
+    const nextParams = new URLSearchParams(searchParams);
+    if (nextType === 'found') {
+      nextParams.set('type', 'found');
+    } else {
+      nextParams.delete('type');
+    }
+    setSearchParams(nextParams);
+  };
+
+  const myReportsQuery = useQuery({
+    queryKey: ['my-lost-reports', 'owned-ids'],
+    queryFn: () => getMyLostReports(1, 50),
+    enabled: isAuthenticated,
+  });
+
+  const ownedReportIds = useMemo(
+    () => new Set((myReportsQuery.data?.items ?? []).map((item) => item.id)),
+    [myReportsQuery.data]
+  );
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteLostReport(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['public-board'] });
+      void queryClient.invalidateQueries({ queryKey: ['my-lost-reports'] });
+      void queryClient.invalidateQueries({ queryKey: ['my-matches'] });
+    },
+  });
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['public-board', boardType, category, area, queryText, page],
@@ -56,6 +101,12 @@ export function PublicBoardPage() {
         </div>
       </div>
 
+      {locationNotice ? (
+        <p className="alert-success" role="status">
+          {locationNotice}
+        </p>
+      ) : null}
+
       <div
         role="group"
         aria-label="Board item type"
@@ -65,10 +116,7 @@ export function PublicBoardPage() {
           type="button"
           className={`btn ${boardType === 'lost' ? 'btn-primary' : 'btn-secondary'}`}
           aria-pressed={boardType === 'lost'}
-          onClick={() => {
-            setBoardType('lost');
-            setPage(1);
-          }}
+          onClick={() => selectBoardType('lost')}
         >
           Lost items
         </button>
@@ -76,10 +124,7 @@ export function PublicBoardPage() {
           type="button"
           className={`btn ${boardType === 'found' ? 'btn-primary' : 'btn-secondary'}`}
           aria-pressed={boardType === 'found'}
-          onClick={() => {
-            setBoardType('found');
-            setPage(1);
-          }}
+          onClick={() => selectBoardType('found')}
         >
           Found items
         </button>
@@ -158,12 +203,17 @@ export function PublicBoardPage() {
           {error instanceof Error ? error.message : 'Unable to load the public board.'}
         </p>
       ) : !data || data.items.length === 0 ? (
-        <p className="alert-info">No lost items match the current filters.</p>
+        <p className="alert-info">No {boardType} items match the current filters.</p>
       ) : (
         <>
           <div className={styles.grid}>
             {data.items.map((item) => (
-              <ItemCard key={item.id} report={item} showClaimLink={boardType === 'found'} />
+              <ItemCard
+                key={item.id}
+                report={item}
+                showClaimLink={boardType === 'found'}
+                onOpen={setSelectedReport}
+              />
             ))}
           </div>
 
@@ -190,6 +240,23 @@ export function PublicBoardPage() {
           </nav>
         </>
       )}
+      <ItemDetailModal
+        report={selectedReport}
+        canDelete={
+          boardType === 'lost' &&
+          Boolean(
+            selectedReport &&
+            ownedReportIds.has(selectedReport.id) &&
+            selectedReport.status !== 'Claimed' &&
+            selectedReport.status !== 'Returned'
+          )
+        }
+        isDeleting={deleteMutation.isPending}
+        onDelete={async (id) => {
+          await deleteMutation.mutateAsync(id);
+        }}
+        onClose={() => setSelectedReport(null)}
+      />
     </section>
   );
 }

@@ -106,4 +106,21 @@ public sealed class MongoLostReportRepository : ILostReportRepository
             report,
             cancellationToken: cancellationToken);
     }
+
+    public async Task DeleteAsync(ObjectId id, CancellationToken cancellationToken)
+    {
+        await _reports.DeleteOneAsync(report => report.Id == id, cancellationToken);
+    }
+
+    public async Task<bool> IsPhotoReferencedAsync(
+        string photoFileName,
+        ObjectId excludingReportId,
+        CancellationToken cancellationToken)
+    {
+        var filter = Builders<LostReport>.Filter.And(
+            Builders<LostReport>.Filter.Eq(report => report.PhotoFileName, photoFileName),
+            Builders<LostReport>.Filter.Ne(report => report.Id, excludingReportId));
+
+        return await _reports.Find(filter).AnyAsync(cancellationToken);
+    }
 }

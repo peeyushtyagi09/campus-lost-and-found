@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="ID card category illustration">
+  <defs>
+    <linearGradient id="bg-id" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e0f2fe"/>
+      <stop offset="100%" stop-color="#f1f5f9"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#bg-id)"/>
+  <path d="M168 0l22 72h20L232 0z" fill="#1d4ed8"/>
+  <rect x="184" y="68" width="32" height="16" rx="4" fill="#64748b"/>
+  <ellipse cx="200" cy="256" rx="95" ry="10" fill="#94a3b8" opacity="0.25"/>
+  <rect x="122" y="82" width="156" height="164" rx="14" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <rect x="122" y="82" width="156" height="34" rx="14" fill="#1e40af"/>
+  <rect x="122" y="102" width="156" height="14" fill="#1e40af"/>
+  <rect x="142" y="132" width="48" height="58" rx="8" fill="#dbeafe"/>
+  <circle cx="166" cy="152" r="11" fill="#3b82f6"/>
+  <path d="M148 184c3-10 33-10 36 0" fill="#3b82f6"/>
+  <rect x="202" y="138" width="58" height="10" rx="4" fill="#334155"/>
+  <rect x="202" y="156" width="46" height="8" rx="4" fill="#94a3b8"/>
+  <rect x="202" y="172" width="52" height="8" rx="4" fill="#cbd5e1"/>
+  <rect x="142" y="208" width="116" height="18" rx="3" fill="#e2e8f0"/>
+</svg>

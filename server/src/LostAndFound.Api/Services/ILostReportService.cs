@@ -33,4 +33,10 @@ public interface ILostReportService
         string callerUserId,
         bool isStaff,
         CancellationToken cancellationToken);
+
+    Task<ServiceResult<bool>> DeleteAsync(
+        string reportId,
+        string callerUserId,
+        bool isStaff,
+        CancellationToken cancellationToken);
 }

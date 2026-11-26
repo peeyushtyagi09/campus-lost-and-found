@@ -26,4 +26,11 @@ public interface ILostReportRepository
     Task<IReadOnlyList<LostReport>> GetOpenByCategoryAsync(ItemCategory category, CancellationToken cancellationToken);
 
     Task UpdateAsync(LostReport report, CancellationToken cancellationToken);
+
+    Task DeleteAsync(ObjectId id, CancellationToken cancellationToken);
+
+    Task<bool> IsPhotoReferencedAsync(
+        string photoFileName,
+        ObjectId excludingReportId,
+        CancellationToken cancellationToken);
 }

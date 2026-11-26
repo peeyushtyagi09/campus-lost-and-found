@@ -168,6 +168,48 @@ public sealed class LostReportsIntegrationTests
         response.Content.Headers.ContentType?.MediaType.Should().Be("application/problem+json");
     }
 
+    [Fact]
+    public async Task PermanentDelete_FoundByOwner_RemovesFromBoardAndOwnerList()
+    {
+        var (ownerClient, _) = await CreateAuthenticatedUserAsync("Owner Finder");
+        var (otherClient, _) = await CreateAuthenticatedUserAsync("Other Student");
+        using var _ = ownerClient;
+        using var __ = otherClient;
+
+        var createResponse = await ownerClient.PostAsJsonAsync(
+            "/api/v1/lost-reports",
+            new CreateLostReportRequest(
+                "Self Found Headphones",
+                ItemCategory.Other,
+                "Wireless headphones left near library entrance",
+                "Library",
+                DateOnly.FromDateTime(DateTime.UtcNow),
+                null,
+                "Small scratch on left earcup",
+                "555-010-2222",
+                "finder@campus.edu"));
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        var created = (await createResponse.Content.ReadFromJsonAsync<LostReportOwnerDto>())!;
+
+        (await otherClient.DeleteAsync($"/api/v1/lost-reports/{created.Id}?permanent=true"))
+            .StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+        (await ownerClient.DeleteAsync($"/api/v1/lost-reports/{created.Id}?permanent=true"))
+            .StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        (await ownerClient.GetAsync($"/api/v1/lost-reports/{created.Id}"))
+            .StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+        var mine = await (await ownerClient.GetAsync("/api/v1/lost-reports/mine"))
+            .Content.ReadFromJsonAsync<PagedResponse<LostReportOwnerDto>>();
+        mine!.Items.Should().NotContain(item => item.Id == created.Id);
+
+        using var anonClient = _factory.CreateClient();
+        var board = await (await anonClient.GetAsync("/api/v1/public/board?type=lost&q=Self%20Found%20Headphones"))
+            .Content.ReadFromJsonAsync<PagedResponse<PublicReportDto>>();
+        board!.Items.Should().NotContain(item => item.Id == created.Id);
+    }
+
     private async Task<(HttpClient Client, string UserId)> CreateAuthenticatedUserAsync(string name)
     {
         var client = _factory.CreateClient();

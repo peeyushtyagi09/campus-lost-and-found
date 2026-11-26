@@ -111,6 +111,15 @@ export const handlers = [
     });
   }),
 
+  http.get('/api/v1/found-reports/mine', () => {
+    return HttpResponse.json({
+      items: [],
+      page: 1,
+      pageSize: 20,
+      totalCount: 0,
+    });
+  }),
+
   http.get('/api/v1/disposals/eligible', () => {
     return HttpResponse.json([]);
   }),

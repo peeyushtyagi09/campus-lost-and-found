@@ -1,11 +1,15 @@
+import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { confirmMatch, dismissMatch, getMyMatches, runMatching } from '../api/matches';
 import { ItemCard } from '../components/ItemCard';
+import { ItemDetailModal } from '../components/ItemDetailModal';
+import type { PublicReport } from '../types/reports';
 import styles from './BoardPage.module.css';
 
 export function MatchesPage() {
   const queryClient = useQueryClient();
+  const [selectedReport, setSelectedReport] = useState<PublicReport | null>(null);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['my-matches'],
@@ -95,11 +99,12 @@ export function MatchesPage() {
                   ) : null}
                 </div>
               </div>
-              <ItemCard report={match.foundItem} />
+              <ItemCard report={match.foundItem} onOpen={setSelectedReport} />
             </article>
           ))}
         </div>
       )}
+      <ItemDetailModal report={selectedReport} onClose={() => setSelectedReport(null)} />
     </section>
   );
 }
