@@ -1,0 +1,45 @@
+services:
+  - type: web
+    name: campus-lost-and-found-api
+    runtime: docker
+    dockerfilePath: ./server/src/LostAndFound.Api/Dockerfile
+    dockerContext: ./server
+    plan: free
+    healthCheckPath: /health/ready
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: Mongo__ConnectionString
+        sync: false
+      - key: Mongo__DatabaseName
+        value: lostandfound
+      - key: Jwt__Issuer
+        value: campus-lost-and-found
+      - key: Jwt__Audience
+        value: campus-lost-and-found-client
+      - key: Jwt__SigningKey
+        generateValue: true
+      - key: Jwt__ExpiryMinutes
+        value: "60"
+      - key: Encryption__Key
+        sync: false
+      - key: Storage__UploadPath
+        value: /app/uploads
+      - key: Storage__MaxPhotoBytes
+        value: "5242880"
+      - key: Cors__AllowedOrigins__0
+        sync: false
+      - key: RateLimiting__AuthPermitLimit
+        value: "10"
+      - key: RateLimiting__UploadPermitLimit
+        value: "20"
+      - key: RateLimiting__GlobalPermitLimit
+        value: "100"
+      - key: RateLimiting__WindowSeconds
+        value: "60"
+      - key: Retention__DisposalDays
+        value: "90"
+      - key: Retention__ExpiredAccountDays
+        value: "365"
+      - key: Email__Enabled
+        value: "false"
